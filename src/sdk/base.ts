@@ -485,7 +485,7 @@ export class BaseOpenSeaSDK {
     accountAddress: string
     protocolAddress?: string
     domain?: string
-  }) {
+  }): Promise<string> {
     return this._cancellationManager.cancelOrder(options)
   }
 

@@ -106,6 +106,8 @@ export class CancellationManager {
       EventType.CancelOrder,
       "Cancelling order",
     )
+
+    return transactionHash
   }
 
   /**
