@@ -4,6 +4,10 @@ import { Chain, SafelistStatus } from "../../src/types"
 import { getSdkForChain } from "../utils/setupIntegration"
 import { processInBatches } from "../utils/utils"
 
+const runAllChainCollections =
+  process.env.OPENSEA_RUN_ALL_CHAIN_COLLECTIONS === "true"
+const allChainCollectionsTest = runAllChainCollections ? test : test.skip
+
 describe("SDK: getCollection", () => {
   test("Get Verified Collection", async () => {
     const slug = "cool-cats-nft"
@@ -69,7 +73,7 @@ describe("SDK: getCollection", () => {
     expect(stats.intervals, "Intervals should exist").toBeTruthy()
   })
 
-  test.skip("Get Collections for all chains", async () => {
+  allChainCollectionsTest("Get Collections for all chains", async () => {
     // Excluding Solana (no NFT collections)
     const chains = Object.values(Chain).filter(chain => chain !== Chain.Solana)
     const sdk = getSdkForChain(Chain.Mainnet)
