@@ -10,11 +10,14 @@ export function parseUnits(
 ): bigint {
   let str = value.toString()
 
-  // Handle JavaScript scientific notation (e.g. 1e-8 → "0.00000001").
+  // Handle scientific notation (e.g. 1e-8 or "1e-8" → "0.00000001").
   // Note: toFixed has precision limits for very large numbers, but this is
   // sufficient for realistic token amounts (up to ~2^53).
-  if (typeof value === "number" && str.includes("e")) {
-    str = value.toFixed(decimals)
+  if (str.toLowerCase().includes("e")) {
+    const num = Number(value)
+    if (!Number.isNaN(num)) {
+      str = num.toFixed(decimals)
+    }
   }
 
   // Handle negative values

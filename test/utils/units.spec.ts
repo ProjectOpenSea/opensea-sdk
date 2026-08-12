@@ -48,6 +48,12 @@ describe("parseUnits", () => {
     expect(parseUnits(1e-8, 18)).toBe(10000000000n)
   })
 
+  test("handles string scientific notation", () => {
+    expect(parseUnits("1e-8", 18)).toBe(10000000000n)
+    expect(parseUnits("1.5e-5", 18)).toBe(15000000000000n)
+    expect(parseUnits("1E-6", 6)).toBe(1n)
+  })
+
   test("throws for invalid decimal (multiple dots)", () => {
     expect(() => parseUnits("1.2.3", 18)).toThrow("Invalid decimal value")
   })
