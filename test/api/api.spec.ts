@@ -64,6 +64,29 @@ describe("API", () => {
     )
   })
 
+  test("getTraits keeps collection-authored trait keys intact", async () => {
+    // The traits payload is keyed by trait name and trait value, not by field
+    // name. Camelizing it renames `fur_color` to `furColor`, and the two
+    // distinct values below collapse into a single `darkBrown` entry whose
+    // count is wrong — a silent data loss the caller cannot detect.
+    vi.useRealTimers()
+    fetchStub = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          categories: { fur_color: "string" },
+          counts: { fur_color: { dark_brown: 12, darkBrown: 3 } },
+        }),
+        { status: 200 },
+      ),
+    )
+    const localApi = new OpenSeaAPI({ apiKey: "key" })
+
+    const traits = await localApi.getTraits("doodles-official")
+
+    expect(traits.categories).toEqual({ fur_color: "string" })
+    expect(traits.counts.fur_color).toEqual({ dark_brown: 12, darkBrown: 3 })
+  })
+
   test("request accepts empty successful responses", async () => {
     vi.useRealTimers()
     fetchStub = vi

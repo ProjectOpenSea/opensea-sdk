@@ -33,14 +33,17 @@ export type HttpMethod = "POST" | "PUT" | "PATCH" | "DELETE"
  *
  * Responses are camelized at this boundary — pass the API's snake_case shape
  * (e.g. an api-types response type) as `T` and the return is the camelCase
- * view. See `utils/case.ts`.
+ * view. See `utils/case.ts`. Endpoints whose response keys are data rather
+ * than field names opt out with {@link RequestOptions.camelizeResponse}.
  */
 export interface Fetcher {
   /**
    * Generic fetch method for GET requests with automatic rate limit retry
    * @param apiPath Path to URL endpoint under API
    * @param query URL query params. Will be used to create a URLSearchParams object.
-   * @param options Request options like timeout and abort signal.
+   * @param options Request options like timeout and abort signal. Includes the
+   *                {@link RequestOptions.camelizeResponse} opt-out for endpoints
+   *                whose response keys are data (e.g. trait names).
    * @returns The camelCase view of the API response.
    */
   get<T>(

@@ -79,10 +79,20 @@ export class CollectionsAPI {
 
   /**
    * Fetch all traits for a collection with their possible values and counts.
+   *
+   * Opts out of response camelization: this payload is keyed by
+   * collection-authored trait names and trait values rather than by field
+   * names, so the default rewrite reports a `dark_brown` trait as `darkBrown`
+   * and merges two traits that differ only in casing. The response's own field
+   * names (`categories`, `counts`) are single words with nothing to convert.
    */
   async getTraits(collectionSlug: string): Promise<GetTraitsResponse> {
     const path = getTraitsPath(collectionSlug)
-    const response = await this.fetcher.get<GetTraitsResponse>(path)
+    const response = await this.fetcher.get<GetTraitsResponse>(
+      path,
+      undefined,
+      { camelizeResponse: false },
+    )
     return response
   }
 

@@ -452,6 +452,16 @@ describe("API: CollectionsAPI", () => {
       expect(result.counts.Fur["Golden Brown"]).toBe(456)
     })
 
+    test("opts out of response camelization", async () => {
+      // The keys in this payload are trait names and trait values, so the
+      // fetcher's default snake_case → camelCase rewrite would corrupt them.
+      mockGet.mockResolvedValue({ categories: {}, counts: {} })
+
+      await collectionsAPI.getTraits("boredapeyachtclub")
+
+      expect(mockGet.mock.calls[0][2]).toEqual({ camelizeResponse: false })
+    })
+
     test("handles collection with no traits", async () => {
       const mockResponse: GetTraitsResponse = {
         categories: {},

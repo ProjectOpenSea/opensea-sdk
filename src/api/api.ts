@@ -1402,7 +1402,7 @@ export class OpenSeaAPI {
           ? `${this.apiBaseUrl}${apiPath}?${qs}`
           : `${this.apiBaseUrl}${apiPath}`
         const raw = await this._fetch(url, "GET", undefined, undefined, options)
-        return camelizeKeysDeep(raw) as Camelize<T>
+        return this.camelizeResponseBody<T>(raw, options)
       },
       { logger: this.logger },
     )
@@ -1447,10 +1447,24 @@ export class OpenSeaAPI {
         const wireBody =
           body == null || !shouldSnakeize ? body : snakeizeKeysDeep(body)
         const raw = await this._fetch(url, method, headers, wireBody, options)
-        return camelizeKeysDeep(raw) as Camelize<T>
+        return this.camelizeResponseBody<T>(raw, options)
       },
       { logger: this.logger },
     )
+  }
+
+  /**
+   * Camelize a response body unless the caller opted out via
+   * {@link RequestOptions.camelizeResponse}, which endpoints keyed by data
+   * rather than field names (e.g. traits) rely on to keep their keys intact.
+   */
+  private camelizeResponseBody<T>(
+    raw: unknown,
+    options?: RequestOptions,
+  ): Camelize<T> {
+    return options?.camelizeResponse === false
+      ? (raw as Camelize<T>)
+      : (camelizeKeysDeep(raw) as Camelize<T>)
   }
 
   private objectToSearchParams(params: object = {}) {
