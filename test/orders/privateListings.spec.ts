@@ -12,6 +12,10 @@ const TAKER_ADDRESS = "0x2222222222222222222222222222222222222222"
 const FEE_RECIPIENT = "0x3333333333333333333333333333333333333333"
 const NFT_CONTRACT = "0x4444444444444444444444444444444444444444"
 const WETH_ADDRESS = "0x5555555555555555555555555555555555555555"
+const TOKEN_A = "0x6666666666666666666666666666666666666666"
+const TOKEN_A_UPPERCASE = "0xABCDEF0000000000000000000000000000000000"
+const TOKEN_A_LOWERCASE = "0xabcdef0000000000000000000000000000000000"
+const TOKEN_B = "0x7777777777777777777777777777777777777777"
 
 const createMockOrder = (
   consideration: OrderWithCounter["parameters"]["consideration"],
@@ -292,6 +296,86 @@ describe("Orders: privateListings", () => {
       expect(() =>
         constructPrivateListingCounterOrder(order, TAKER_ADDRESS),
       ).toThrow("Not all currency items were the same")
+    })
+
+    test("should throw if ERC20 payment items reference different tokens", () => {
+      const order = createMockOrder([
+        // NFT to taker
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifierOrCriteria: "1",
+          startAmount: "1",
+          endAmount: "1",
+          recipient: TAKER_ADDRESS,
+        },
+        // TOKEN_A payment to seller
+        {
+          itemType: ItemType.ERC20,
+          token: TOKEN_A,
+          identifierOrCriteria: "0",
+          startAmount: "100",
+          endAmount: "100",
+          recipient: SELLER_ADDRESS,
+        },
+        // TOKEN_B payment to fee recipient
+        {
+          itemType: ItemType.ERC20,
+          token: TOKEN_B,
+          identifierOrCriteria: "0",
+          startAmount: "20",
+          endAmount: "20",
+          recipient: FEE_RECIPIENT,
+        },
+      ])
+
+      expect(() =>
+        constructPrivateListingCounterOrder(order, TAKER_ADDRESS),
+      ).toThrow("Not all currency items were the same")
+    })
+
+    test("should not treat differently-cased identical ERC20 tokens as different currencies", () => {
+      const order = createMockOrder([
+        // NFT to taker
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifierOrCriteria: "1",
+          startAmount: "1",
+          endAmount: "1",
+          recipient: TAKER_ADDRESS,
+        },
+        // TOKEN_A (all-caps hex) payment to seller
+        {
+          itemType: ItemType.ERC20,
+          token: TOKEN_A_UPPERCASE,
+          identifierOrCriteria: "0",
+          startAmount: "100",
+          endAmount: "100",
+          recipient: SELLER_ADDRESS,
+        },
+        // Same token lowercased, payment to fee recipient
+        {
+          itemType: ItemType.ERC20,
+          token: TOKEN_A_LOWERCASE,
+          identifierOrCriteria: "0",
+          startAmount: "20",
+          endAmount: "20",
+          recipient: FEE_RECIPIENT,
+        },
+      ])
+
+      const counterOrder = constructPrivateListingCounterOrder(
+        order,
+        TAKER_ADDRESS,
+      )
+
+      expect(counterOrder.parameters.offer).toHaveLength(1)
+      expect(counterOrder.parameters.offer[0].itemType).toBe(ItemType.ERC20)
+      expect(counterOrder.parameters.offer[0].token).toBe(TOKEN_A_UPPERCASE)
+      expect(counterOrder.parameters.offer[0].identifierOrCriteria).toBe("0")
+      expect(counterOrder.parameters.offer[0].startAmount).toBe("120")
+      expect(counterOrder.parameters.offer[0].endAmount).toBe("120")
     })
   })
 })

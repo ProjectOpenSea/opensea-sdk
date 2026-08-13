@@ -58,7 +58,11 @@ export const constructPrivateListingCounterOrder = (
       )
     }
     if (
-      !paymentItems.every(item => item.itemType === paymentItems[0].itemType)
+      !paymentItems.every(
+        item =>
+          item.itemType === paymentItems[0].itemType &&
+          item.token.toLowerCase() === paymentItems[0].token.toLowerCase(),
+      )
     ) {
       throw new Error("Not all currency items were the same for private order")
     }
