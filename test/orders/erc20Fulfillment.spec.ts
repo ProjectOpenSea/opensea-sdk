@@ -51,12 +51,18 @@ function erc721Item(tokenId: string, recipient = SELLER) {
   }
 }
 
-function advancedOrderInput(consideration: unknown[]) {
+function advancedOrderInput(
+  consideration: unknown[],
+  {
+    numerator = 1,
+    denominator = 1,
+  }: { numerator?: unknown; denominator?: unknown } = {},
+) {
   return {
     advancedOrder: {
       parameters: { offerer: SELLER, consideration },
-      numerator: 1,
-      denominator: 1,
+      numerator,
+      denominator,
       signature: "0x",
       extraData: "0x",
     },
@@ -97,6 +103,53 @@ describe("getErc20Payment: advanced and standard orders", () => {
       ]),
     )
     expect(payment).toEqual({ token: USDG, amount: 360000000n })
+  })
+
+  test("returns null for a partial-fill advanced order, not the full-order sum", () => {
+    // A 1/4 fill of seller 80 + fee 20 really costs 25; the full 100 is not a
+    // confident preflight amount, so the helper must fail open.
+    expect(
+      getErc20Payment(
+        advancedOrderInput(
+          [erc20Item(USDG, "80"), erc20Item(USDG, "20", FEE_RECIPIENT)],
+          { numerator: 1, denominator: 4 },
+        ),
+      ),
+    ).toBe(null)
+  })
+
+  test("treats an equal positive fraction as a full fill (e.g. 2/2)", () => {
+    expect(
+      getErc20Payment(
+        advancedOrderInput(
+          [erc20Item(USDG, "80"), erc20Item(USDG, "20", FEE_RECIPIENT)],
+          { numerator: 2, denominator: 2 },
+        ),
+      ),
+    ).toEqual({ token: USDG, amount: 100n })
+  })
+
+  test("returns null for a missing or unparsable fraction, and for zero", () => {
+    const items = [erc20Item(USDG, "80"), erc20Item(USDG, "20", FEE_RECIPIENT)]
+
+    const missingNumerator = advancedOrderInput(items)
+    delete (missingNumerator.advancedOrder as Record<string, unknown>).numerator
+    expect(getErc20Payment(missingNumerator)).toBe(null)
+
+    const missingDenominator = advancedOrderInput(items)
+    delete (missingDenominator.advancedOrder as Record<string, unknown>)
+      .denominator
+    expect(getErc20Payment(missingDenominator)).toBe(null)
+
+    expect(
+      getErc20Payment(advancedOrderInput(items, { numerator: "nope" })),
+    ).toBe(null)
+    expect(getErc20Payment(advancedOrderInput(items, { numerator: 0 }))).toBe(
+      null,
+    )
+    expect(getErc20Payment(advancedOrderInput(items, { denominator: 0 }))).toBe(
+      null,
+    )
   })
 
   test("reads the same consideration from a fulfillOrder input shape", () => {

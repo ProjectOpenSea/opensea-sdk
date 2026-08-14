@@ -423,8 +423,16 @@ describe("SDK: FulfillmentManager", () => {
     /** Price the mock listing in USDG: 351 to the seller plus a 9 USDG fee. */
     function priceInErc20({
       fulfillerConduitKey = CONDUIT_KEY,
+      numerator = 1,
+      denominator = 1,
+      seller = "351000000",
+      fee = "9000000",
     }: {
       fulfillerConduitKey?: string
+      numerator?: number
+      denominator?: number
+      seller?: string
+      fee?: string
     } = {}) {
       mockAPI.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
@@ -441,22 +449,22 @@ describe("SDK: FulfillmentManager", () => {
                       itemType: 1,
                       token: USDG,
                       identifierOrCriteria: "0",
-                      startAmount: "351000000",
-                      endAmount: "351000000",
+                      startAmount: seller,
+                      endAmount: seller,
                       recipient: SELLER,
                     },
                     {
                       itemType: 1,
                       token: USDG,
                       identifierOrCriteria: "0",
-                      startAmount: "9000000",
-                      endAmount: "9000000",
+                      startAmount: fee,
+                      endAmount: fee,
                       recipient: "0x0000a26b00c1f0df003000390027140000faa719",
                     },
                   ],
                 },
-                numerator: 1,
-                denominator: 1,
+                numerator,
+                denominator,
                 signature: "0x",
                 extraData: "0x",
               },
@@ -625,6 +633,43 @@ describe("SDK: FulfillmentManager", () => {
       })
 
       expect(readContract).not.toHaveBeenCalled()
+    })
+
+    test("does not falsely reject a partial fill whose fraction lowers the payment", async () => {
+      // A 1/4 fill of seller 80 + fee 20 really costs 25, and the buyer has
+      // exactly that. The preflight must skip rather than demand the full 100.
+      priceInErc20({ numerator: 1, denominator: 4, seller: "80", fee: "20" })
+
+      const result = await fulfillmentManager.fulfillOrder({
+        order: mockOrderV2,
+        accountAddress: "0xBuyer",
+      })
+
+      expect(result).toBe("0xFulfillTxHash")
+      expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
+
+      // Skipping the preflight means no onchain balance/allowance reads.
+      const readContract = (
+        mockContext.contractCaller as unknown as {
+          readContract: ReturnType<typeof vi.fn>
+        }
+      ).readContract
+      expect(readContract).not.toHaveBeenCalled()
+    })
+
+    test("still preflights an equal positive fraction (2/2) as a full fill", async () => {
+      // 2/2 represents a full fill, so the full 360000000 is required and the
+      // preflight must still reject an insufficient allowance.
+      priceInErc20({ numerator: 2, denominator: 2 })
+      stubErc20Reads({ balance: 500000000n, allowance: 100n })
+
+      await expect(
+        fulfillmentManager.fulfillOrder({
+          order: mockOrderV2,
+          accountAddress: "0xBuyer",
+        }),
+      ).rejects.toThrow(/not approved/)
+      expect(mockSigner.sendTransaction).not.toHaveBeenCalled()
     })
   })
 

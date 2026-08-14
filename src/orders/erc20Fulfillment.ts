@@ -158,6 +158,24 @@ function basicOrderErc20Payment(
 }
 
 /**
+ * Whether an advanced order's numerator/denominator fraction represents a
+ * full fill. A full fill is the only case where summing the consideration
+ * items' `startAmount`s yields the exact payment: for a partial fill Seaport
+ * scales each item by the fraction and requires exact divisibility, which the
+ * SDK does not model here. Returns false for a missing or unparsable value, a
+ * non-positive value, or an unequal fraction, so the caller fails open and
+ * skips the preflight.
+ */
+function isFullFillFraction(order: Record<string, unknown>): boolean {
+  const numerator = toBigInt(order.numerator)
+  const denominator = toBigInt(order.denominator)
+  if (numerator === null || denominator === null) {
+    return false
+  }
+  return numerator > 0n && numerator === denominator
+}
+
+/**
  * Read the ERC20 payment a fulfiller owes from the `inputData` of an OpenSea
  * fulfillment response.
  *
@@ -181,6 +199,15 @@ export function getErc20Payment(inputData: unknown): Erc20Payment | null {
       ? inputData.order
       : null
   if (!order || !isRecord(order.parameters)) {
+    return null
+  }
+
+  // An AdvancedOrder may carry a numerator/denominator fraction representing a
+  // partial fill. Seaport applies that fraction to each consideration item and
+  // requires exact divisibility, so the summed full-order consideration is only
+  // a confident preflight amount for a full fill. For any other fraction, fail
+  // open and skip the preflight rather than falsely blocking a purchase.
+  if (isRecord(inputData.advancedOrder) && !isFullFillFraction(order)) {
     return null
   }
 
