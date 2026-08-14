@@ -416,6 +416,12 @@ export class AssetsManager {
             callData,
           })
         } else if (asset.tokenStandard === TokenStandard.ERC20) {
+          const contractAddress = asset.tokenAddress.toLowerCase()
+          if (processedContracts.has(contractAddress)) {
+            continue
+          }
+          processedContracts.add(contractAddress)
+
           // approve(spender, amount) - use max uint256 for unlimited
           const callData = cc.encodeFunctionData({
             abi: APPROVE_ABI,
