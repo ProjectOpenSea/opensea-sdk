@@ -89,7 +89,7 @@ function createViemSigner(
       }
       return walletClient.signTypedData({
         domain: {
-          chainId: Number(domain.chainId),
+          chainId: domain.chainId != null ? Number(domain.chainId) : undefined,
           name: domain.name,
           version: domain.version,
           verifyingContract: domain.verifyingContract as `0x${string}`,
