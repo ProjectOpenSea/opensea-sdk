@@ -1,10 +1,15 @@
 import { ItemType } from "@opensea/seaport-js/lib/constants"
-import type { OrderWithCounter } from "@opensea/seaport-js/lib/types"
+import type {
+  CreateInputItem,
+  OrderWithCounter,
+} from "@opensea/seaport-js/lib/types"
 import { ZeroAddress } from "ethers"
 import { describe, expect, test } from "vitest"
 import {
   computePrivateListingValue,
   constructPrivateListingCounterOrder,
+  getPrivateListingConsiderations,
+  getPrivateListingFulfillments,
 } from "../../src/orders/privateListings"
 
 const SELLER_ADDRESS = "0x1111111111111111111111111111111111111111"
@@ -420,6 +425,130 @@ describe("Orders: privateListings", () => {
       expect(counterOrder.parameters.offer[0].token).toBe(WETH_ADDRESS)
       expect(counterOrder.parameters.offer[0].startAmount).toBe(
         "1000000000000000000",
+      )
+    })
+  })
+
+  describe("getPrivateListingConsiderations", () => {
+    test("stamps the private-sale recipient onto every offer item, preserving order and fields", () => {
+      const offer: CreateInputItem[] = [
+        { itemType: ItemType.ERC721, token: NFT_CONTRACT, identifier: "1" },
+        {
+          itemType: ItemType.ERC1155,
+          token: NFT_CONTRACT,
+          identifier: "2",
+          amount: "5",
+        },
+      ]
+
+      expect(getPrivateListingConsiderations(offer, TAKER_ADDRESS)).toEqual([
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifier: "1",
+          recipient: TAKER_ADDRESS,
+        },
+        {
+          itemType: ItemType.ERC1155,
+          token: NFT_CONTRACT,
+          identifier: "2",
+          amount: "5",
+          recipient: TAKER_ADDRESS,
+        },
+      ])
+    })
+
+    test("returns an empty array for an empty offer", () => {
+      expect(getPrivateListingConsiderations([], TAKER_ADDRESS)).toEqual([])
+    })
+  })
+
+  describe("getPrivateListingFulfillments", () => {
+    test("matches each offered NFT to its consideration counterpart and routes every currency item to the counter order", () => {
+      const order = createMockOrder([
+        // NFT going to the private taker -- matches the offered NFT (offer item 0)
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifierOrCriteria: "1",
+          startAmount: "1",
+          endAmount: "1",
+          recipient: TAKER_ADDRESS,
+        },
+        // native payment to seller
+        {
+          itemType: ItemType.NATIVE,
+          token: ZeroAddress,
+          identifierOrCriteria: "0",
+          startAmount: "1000000000000000000",
+          endAmount: "1000000000000000000",
+          recipient: SELLER_ADDRESS,
+        },
+        // native fee
+        {
+          itemType: ItemType.NATIVE,
+          token: ZeroAddress,
+          identifierOrCriteria: "0",
+          startAmount: "100000000000000000",
+          endAmount: "100000000000000000",
+          recipient: FEE_RECIPIENT,
+        },
+      ])
+
+      expect(getPrivateListingFulfillments(order)).toEqual([
+        // NFT: offer item 0 of the listing (order 0) <-> its consideration item 0
+        {
+          offerComponents: [{ orderIndex: 0, itemIndex: 0 }],
+          considerationComponents: [{ orderIndex: 0, itemIndex: 0 }],
+        },
+        // payment: counter order (1) offer item 0 <-> consideration item 1
+        {
+          offerComponents: [{ orderIndex: 1, itemIndex: 0 }],
+          considerationComponents: [{ orderIndex: 0, itemIndex: 1 }],
+        },
+        // fee: counter order (1) offer item 0 <-> consideration item 2
+        {
+          offerComponents: [{ orderIndex: 1, itemIndex: 0 }],
+          considerationComponents: [{ orderIndex: 0, itemIndex: 2 }],
+        },
+      ])
+    })
+
+    test("skips non-currency consideration items, leaving only the NFT fulfillment", () => {
+      const order = createMockOrder([
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifierOrCriteria: "1",
+          startAmount: "1",
+          endAmount: "1",
+          recipient: TAKER_ADDRESS,
+        },
+      ])
+
+      expect(getPrivateListingFulfillments(order)).toEqual([
+        {
+          offerComponents: [{ orderIndex: 0, itemIndex: 0 }],
+          considerationComponents: [{ orderIndex: 0, itemIndex: 0 }],
+        },
+      ])
+    })
+
+    test("throws when an offered NFT has no matching consideration item", () => {
+      // The consideration NFT carries a different identifier than the offered NFT (id 1).
+      const order = createMockOrder([
+        {
+          itemType: ItemType.ERC721,
+          token: NFT_CONTRACT,
+          identifierOrCriteria: "999",
+          startAmount: "1",
+          endAmount: "1",
+          recipient: TAKER_ADDRESS,
+        },
+      ])
+
+      expect(() => getPrivateListingFulfillments(order)).toThrow(
+        "Could not find matching offer item in the consideration",
       )
     })
   })
