@@ -69,7 +69,9 @@ function advancedOrderInput(consideration: unknown[]) {
 /** basicOrderType 8 is route 2, ERC20_TO_ERC721: the fulfiller pays with ERC20. */
 function basicOrderInput(overrides: Record<string, unknown> = {}) {
   return {
-    basicOrderParameters: {
+    // The fulfillment API serializes fulfillBasicOrder's single decoded struct
+    // under `parameters`, matching the shape consumed by FulfillmentManager.
+    parameters: {
       considerationToken: USDG,
       considerationIdentifier: "0",
       considerationAmount: "360000000",
@@ -170,7 +172,7 @@ describe("getErc20Payment: advanced and standard orders", () => {
 })
 
 describe("getErc20Payment: basic orders", () => {
-  test("sums considerationAmount and additionalRecipients for an ERC20 route", () => {
+  test("sums considerationAmount and additionalRecipients from the API parameters shape", () => {
     expect(getErc20Payment(basicOrderInput())).toEqual({
       token: USDG,
       amount: 369000000n,
@@ -252,7 +254,7 @@ describe("getFulfillerConduitKey", () => {
     expect(getFulfillerConduitKey(advancedOrderInput([]))).toBe(CONDUIT_KEY)
   })
 
-  test("reads the key nested in basicOrderParameters", () => {
+  test("reads the key nested in the basic-order API parameters", () => {
     expect(getFulfillerConduitKey(basicOrderInput())).toBe(CONDUIT_KEY)
   })
 
