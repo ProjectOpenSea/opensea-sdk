@@ -51,6 +51,25 @@ export function createSeaportBridge(
   return new ViemEthersSigner(walletClient, ethersProvider)
 }
 
+/** Infer the EIP-712 root struct: the named type no other struct references. */
+function inferPrimaryType(types: Record<string, Array<{ type: string }>>): string {
+  const namedTypes = Object.keys(types).filter(key => key !== "EIP712Domain")
+  const referencedTypes = new Set<string>()
+
+  for (const fields of Object.values(types)) {
+    for (const field of fields) {
+      // Strip any array suffix before checking whether this field references a
+      // named struct (e.g. Person[] -> Person).
+      const referencedType = field.type.replace(/\[[^\]]*\]$/g, "")
+      if (namedTypes.includes(referencedType)) {
+        referencedTypes.add(referencedType)
+      }
+    }
+  }
+
+  return namedTypes.find(type => !referencedTypes.has(type)) ?? namedTypes[0] ?? ""
+}
+
 /**
  * Minimal ethers AbstractSigner implementation backed by a viem WalletClient.
  * Implements the methods that seaport-js calls: getAddress, sendTransaction,
@@ -145,9 +164,7 @@ class ViemEthersSigner extends AbstractSigner {
   }
 
   async signTypedData(domain: any, types: any, value: any): Promise<string> {
-    const primaryType =
-      Object.keys(types).find(key => key !== "EIP712Domain") ||
-      Object.keys(types)[0]
+    const primaryType = inferPrimaryType(types)
 
     return this._walletClient.signTypedData({
       domain: {
