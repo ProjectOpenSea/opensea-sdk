@@ -171,7 +171,13 @@ export function getErc20Payment(inputData: unknown): Erc20Payment | null {
     return null
   }
 
-  if ("basicOrderParameters" in inputData) {
+  // The fulfillment API serializes a decoded fulfillBasicOrder call as a single
+  // `parameters` struct. Older hand-written SDK types called this
+  // `basicOrderParameters`, so accept that shape as a compatibility fallback.
+  if (isRecord(inputData.parameters)) {
+    return basicOrderErc20Payment(inputData.parameters)
+  }
+  if (isRecord(inputData.basicOrderParameters)) {
     return basicOrderErc20Payment(inputData.basicOrderParameters)
   }
 
@@ -200,8 +206,13 @@ export function getFulfillerConduitKey(inputData: unknown): string | null {
   if (typeof direct === "string") {
     return direct
   }
-  if (isRecord(inputData.basicOrderParameters)) {
-    const fromBasicOrder = inputData.basicOrderParameters.fulfillerConduitKey
+  const basicOrderParameters = isRecord(inputData.parameters)
+    ? inputData.parameters
+    : isRecord(inputData.basicOrderParameters)
+      ? inputData.basicOrderParameters
+      : null
+  if (basicOrderParameters) {
+    const fromBasicOrder = basicOrderParameters.fulfillerConduitKey
     if (typeof fromBasicOrder === "string") {
       return fromBasicOrder
     }
