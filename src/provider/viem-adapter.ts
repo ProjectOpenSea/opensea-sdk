@@ -29,6 +29,23 @@ export interface ViemAdapterParams {
   rpcUrl?: string
 }
 
+/** Infer the EIP-712 root struct: the named type no other struct references. */
+function inferPrimaryType(types: Record<string, Array<{ type: string }>>): string {
+  const namedTypes = Object.keys(types).filter(key => key !== "EIP712Domain")
+  const referencedTypes = new Set<string>()
+
+  for (const fields of Object.values(types)) {
+    for (const field of fields) {
+      const referencedType = field.type.replace(/\[[^\]]*\]$/g, "")
+      if (namedTypes.includes(referencedType)) {
+        referencedTypes.add(referencedType)
+      }
+    }
+  }
+
+  return namedTypes.find(type => !referencedTypes.has(type)) ?? namedTypes[0] ?? ""
+}
+
 /**
  * Creates an OpenSeaWallet from viem clients.
  */
@@ -95,9 +112,7 @@ function createViemSigner(
           verifyingContract: domain.verifyingContract as `0x${string}`,
         },
         types,
-        primaryType:
-          Object.keys(types).find(key => key !== "EIP712Domain") ||
-          Object.keys(types)[0],
+        primaryType: inferPrimaryType(types),
         message: value,
         account: walletClient.account,
       })
