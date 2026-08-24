@@ -3,6 +3,7 @@ import type { OpenSeaRateLimitError } from "../../src/types"
 import {
   executeSequentialWithRateLimit,
   executeWithRateLimit,
+  type RateLimitOptions,
 } from "../../src/utils/rateLimit"
 
 describe("Utils: rateLimit", () => {
@@ -146,6 +147,44 @@ describe("Utils: rateLimit", () => {
 
       expect(result).toBe("success")
       expect(operation).toHaveBeenCalledTimes(2)
+    })
+
+    test("aborts while waiting to retry a rate-limited operation", async () => {
+      const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
+        statusCode: 429,
+        retryAfter: 30,
+      }) as OpenSeaRateLimitError
+      const operation = vi
+        .fn()
+        .mockRejectedValueOnce(rateLimitError)
+        .mockResolvedValueOnce("success")
+      const controller = new AbortController()
+      const options: RateLimitOptions = {
+        signal: controller.signal,
+      }
+      let outcome: "pending" | "resolved" | "rejected" = "pending"
+      let rejection: unknown
+
+      const observed = executeWithRateLimit(operation, options).then(
+        () => {
+          outcome = "resolved"
+        },
+        error => {
+          outcome = "rejected"
+          rejection = error
+        },
+      )
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(operation).toHaveBeenCalledTimes(1)
+
+      controller.abort()
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(outcome).toBe("rejected")
+      expect((rejection as Error).message).toBe("Request aborted")
+      expect(operation).toHaveBeenCalledTimes(1)
+      await observed
     })
   })
 

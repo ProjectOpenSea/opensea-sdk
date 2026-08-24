@@ -204,6 +204,54 @@ describe("API", () => {
     expect(result.address).toBe("0x0000000000000000000000000000000000000000")
   })
 
+  test.each([
+    "get",
+    "request",
+  ] as const)("API %s aborts while waiting to retry a rate-limited request", async method => {
+    const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
+      statusCode: 429,
+      retryAfter: 30,
+    }) as OpenSeaRateLimitError
+    const localApi = new OpenSeaAPI({ apiKey: "key" })
+    fetchStub = vi
+      .spyOn(
+        localApi as unknown as { _fetch: () => Promise<unknown> },
+        "_fetch",
+      )
+      .mockRejectedValueOnce(rateLimitError)
+      .mockResolvedValueOnce({ ok: true })
+    const controller = new AbortController()
+    let outcome: "pending" | "resolved" | "rejected" = "pending"
+    let rejection: unknown
+
+    const requestPromise =
+      method === "get"
+        ? localApi.get("/api/v2/test", {}, { signal: controller.signal })
+        : localApi.request("POST", "/api/v2/test", undefined, undefined, {
+            signal: controller.signal,
+          })
+    const observed = requestPromise.then(
+      () => {
+        outcome = "resolved"
+      },
+      error => {
+        outcome = "rejected"
+        rejection = error
+      },
+    )
+
+    await vi.advanceTimersByTimeAsync(0)
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+
+    controller.abort()
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(outcome).toBe("rejected")
+    expect((rejection as Error).message).toBe("Request aborted")
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+    await observed
+  })
+
   test("API parses Retry-After HTTP-date header", () => {
     // Pin system time for deterministic date math
     vi.setSystemTime(new Date("2020-01-01T00:00:00.000Z"))

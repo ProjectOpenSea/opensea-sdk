@@ -1404,7 +1404,7 @@ export class OpenSeaAPI {
         const raw = await this._fetch(url, "GET", undefined, undefined, options)
         return this.camelizeResponseBody<T>(raw, options)
       },
-      { logger: this.logger },
+      { logger: this.logger, signal: options?.signal },
     )
   }
 
@@ -1449,7 +1449,7 @@ export class OpenSeaAPI {
         const raw = await this._fetch(url, method, headers, wireBody, options)
         return this.camelizeResponseBody<T>(raw, options)
       },
-      { logger: this.logger },
+      { logger: this.logger, signal: options?.signal },
     )
   }
 

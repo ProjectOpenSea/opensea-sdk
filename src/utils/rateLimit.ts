@@ -23,6 +23,11 @@ const CUSTOM_RATE_LIMIT_STATUS_CODE = 599
 export interface RateLimitOptions {
   /** Logger function for logging progress */
   logger?: (message: string) => void
+  /**
+   * Abort signal for cancelling a pending retry delay. The operation itself
+   * must handle cancellation separately.
+   */
+  signal?: AbortSignal
   /** Maximum number of retry attempts for rate limit errors */
   maxRetries?: number
   /** Base delay in ms to wait after a rate limit error if retry-after header is not present */
@@ -32,9 +37,29 @@ export interface RateLimitOptions {
 /**
  * Sleep for a specified duration
  * @param ms Duration in milliseconds
+ * @param signal Optional signal for cancelling the delay
  */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+  if (signal.aborted) {
+    return Promise.reject(new Error("Request aborted"))
+  }
+
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>
+    const onAbort = () => {
+      clearTimeout(timeoutId)
+      signal.removeEventListener("abort", onAbort)
+      reject(new Error("Request aborted"))
+    }
+    timeoutId = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort)
+      resolve()
+    }, ms)
+    signal.addEventListener("abort", onAbort, { once: true })
+  })
 }
 
 /**
@@ -52,6 +77,7 @@ export async function executeWithRateLimit<T>(
 ): Promise<T> {
   const {
     logger = () => {},
+    signal,
     maxRetries = DEFAULT_MAX_RETRIES,
     baseRetryDelay = DEFAULT_BASE_RETRY_DELAY_MS,
   } = options
@@ -92,7 +118,7 @@ export async function executeWithRateLimit<T>(
         )
       }
 
-      await sleep(delayMs)
+      await sleep(delayMs, signal)
       logger(`Retrying operation...`)
     }
   }
