@@ -232,6 +232,8 @@ export class WalletAuthAPI {
       "POST",
       `/api/v2/drops/${segment(slug)}/items/media`,
       body,
+      undefined,
+      { camelizeResponse: false },
     )
   }
 
@@ -250,6 +252,9 @@ export class WalletAuthAPI {
     return this.fetcher.request<OperationResponse<"upload_drop_allowlist">>(
       "POST",
       `/api/v2/drops/${segment(slug)}/allowlist`,
+      undefined,
+      undefined,
+      { camelizeResponse: false },
     )
   }
 
@@ -301,6 +306,9 @@ export class WalletAuthAPI {
     return this.fetcher.request<OperationResponse<"upload_collection_image">>(
       "POST",
       `/api/v2/collections/${segment(slug)}/images/${segment(imageType)}?${query}`,
+      undefined,
+      undefined,
+      { camelizeResponse: false },
     )
   }
 
@@ -340,7 +348,7 @@ export class WalletAuthAPI {
       "/api/v2/profile/images",
       body,
       undefined,
-      { snakeizeBody: false },
+      { snakeizeBody: false, camelizeResponse: false },
     )
   }
 
