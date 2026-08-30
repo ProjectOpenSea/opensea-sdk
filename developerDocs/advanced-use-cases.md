@@ -316,6 +316,8 @@ The SDK provides gas-efficient methods for transferring multiple assets in a sin
 Before transferring assets, you need to approve them for transfer to the OpenSea conduit. The `batchApproveAssets()` method intelligently batches multiple approval transactions:
 
 ```typescript
+import { TokenStandard } from "@opensea/sdk";
+
 // Approve multiple assets in a single transaction
 const txHash = await openseaSDK.batchApproveAssets({
   assets: [
@@ -352,6 +354,8 @@ This is significantly more gas-efficient than approving each asset separately.
 After assets are approved, use `bulkTransfer()` to transfer multiple assets to different recipients:
 
 ```typescript
+import { TokenStandard } from "@opensea/sdk";
+
 const txHash = await openseaSDK.bulkTransfer({
   assets: [
     {
