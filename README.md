@@ -28,8 +28,8 @@ Get started by getting an API key and instantiating your own OpenSea SDK instanc
 ```typescript
 import { OpenSeaSDK } from "@opensea/sdk";
 
-const { api_key } = await OpenSeaSDK.requestInstantApiKey();
-const sdk = new OpenSeaSDK(provider, { chain: Chain.Mainnet, apiKey: api_key });
+const { apiKey } = await OpenSeaSDK.requestInstantApiKey();
+const sdk = new OpenSeaSDK(provider, { chain: Chain.Mainnet, apiKey });
 ```
 
 Or from the shell:

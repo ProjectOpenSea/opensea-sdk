@@ -40,7 +40,7 @@ To get started, first get an API key.
 ```typescript
 import { OpenSeaSDK } from "@opensea/sdk";
 
-const { api_key } = await OpenSeaSDK.requestInstantApiKey();
+const { apiKey } = await OpenSeaSDK.requestInstantApiKey();
 ```
 
 Or from the shell:
