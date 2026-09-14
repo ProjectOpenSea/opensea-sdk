@@ -406,6 +406,21 @@ describe("API: EventsAPI", () => {
 
       expect(mockGet.mock.calls[0][1]).toEqual({ limit: 5 })
     })
+
+    test("does not send the account-only chain filter", async () => {
+      mockGet.mockResolvedValue({ assetEvents: [], next: undefined })
+
+      await eventsAPI.getEventsByCollection("test-collection", {
+        chain: "solana",
+        limit: 5,
+        traits: [{ traitType: "Background", value: "Red" }],
+      })
+
+      expect(mockGet.mock.calls[0][1]).toEqual({
+        limit: 5,
+        traits: '[{"traitType":"Background","value":"Red"}]',
+      })
+    })
   })
 
   describe("getEventsByNFT", () => {
@@ -493,6 +508,18 @@ describe("API: EventsAPI", () => {
       await eventsAPI.getEventsByNFT(Chain.Polygon, "0x123", "1")
 
       expect(mockGet.mock.calls[0][0]).toContain("polygon")
+    })
+
+    test("uses the path chain without sending a second chain filter", async () => {
+      mockGet.mockResolvedValue({ assetEvents: [], next: undefined })
+
+      await eventsAPI.getEventsByNFT(Chain.Mainnet, "0x123", "1", {
+        chain: "solana",
+        limit: 5,
+      })
+
+      expect(mockGet.mock.calls[0][0]).toContain("/chain/ethereum/")
+      expect(mockGet.mock.calls[0][1]).toEqual({ limit: 5 })
     })
 
     test("throws error on API failure", async () => {

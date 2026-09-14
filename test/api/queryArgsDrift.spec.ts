@@ -321,12 +321,41 @@ describe("query arg serialization", () => {
     expect(url.searchParams.get("limit")).toBe("5")
   })
 
-  it("omits the chain the events feed ignores", async () => {
-    const url = await urlFor(api =>
-      api.getEvents({ chain: "solana", limit: 5 }),
-    )
+  it.each([
+    {
+      endpoint: "the general event feed",
+      call: (api: OpenSeaAPI) =>
+        api.events.getEvents({ chain: "solana", limit: 5 }),
+    },
+    {
+      endpoint: "the collection event feed",
+      call: (api: OpenSeaAPI) =>
+        api.events.getEventsByCollection("azuki", {
+          chain: "solana",
+          limit: 5,
+        }),
+    },
+    {
+      endpoint: "the NFT event feed",
+      call: (api: OpenSeaAPI) =>
+        api.events.getEventsByNFT(Chain.Mainnet, "0xabc", "1", {
+          chain: "solana",
+          limit: 5,
+        }),
+    },
+  ])("omits the chain $endpoint ignores", async ({ call }) => {
+    const url = await urlFor(call)
 
     expect(url.searchParams.has("chain")).toBe(false)
+    expect(url.searchParams.get("limit")).toBe("5")
+  })
+
+  it("keeps the chain filter on the account event feed", async () => {
+    const url = await urlFor(api =>
+      api.events.getEventsByAccount("0xabc", { chain: "solana", limit: 5 }),
+    )
+
+    expect(url.searchParams.get("chain")).toBe("solana")
     expect(url.searchParams.get("limit")).toBe("5")
   })
 })

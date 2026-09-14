@@ -17,16 +17,18 @@ import {
  * Events-related API operations
  */
 /**
- * Drops `chain` for the one endpoint that ignores it.
+ * Drops `chain` for event endpoints that ignore it.
  *
- * `GET /api/v2/events` documents no `chain` query parameter and does not filter on one: a request
- * for `chain=solana` still comes back with Ethereum events. Sending it changed nothing, so removing
- * it changes nothing either; it stops the SDK implying a filter the API never applied.
+ * The general, collection and NFT event endpoints document no `chain` query parameter. The NFT
+ * endpoint already carries its chain in the path; the other two are not chain-filterable. Sending
+ * the query changed nothing, so removing it stops the SDK implying a filter the API never applied.
  *
- * Scoped only to this endpoint on purpose. `GET /api/v2/events/accounts/{address}` does document
- * `chain` and does filter, so {@link EventsAPI.getEventsByAccount} passes it through untouched.
+ * `GET /api/v2/events/accounts/{address}` does document `chain` and does filter, so
+ * {@link EventsAPI.getEventsByAccount} passes it through untouched.
  */
-function withoutIgnoredChain(args?: GetEventsArgs): GetEventsArgs | undefined {
+function withoutIgnoredChain<T extends GetEventsArgs>(
+  args?: T,
+): Omit<T, "chain"> | undefined {
   if (!args || args.chain === undefined) {
     return args
   }
@@ -72,7 +74,7 @@ export class EventsAPI {
   ): Promise<GetEventsResponse> {
     const response = await this.fetcher.get<GetEventsResponse>(
       getEventsByCollectionAPIPath(collectionSlug),
-      encodeArgs(args),
+      encodeArgs(withoutIgnoredChain(args)),
     )
     return response
   }
@@ -88,7 +90,7 @@ export class EventsAPI {
   ): Promise<GetEventsResponse> {
     const response = await this.fetcher.get<GetEventsResponse>(
       getEventsByNFTAPIPath(chain, address, identifier),
-      args,
+      withoutIgnoredChain(args),
     )
     return response
   }

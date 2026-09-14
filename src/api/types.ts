@@ -696,9 +696,9 @@ export interface GetEventsArgs {
   /**
    * Chain to filter by. Honoured by `getEventsByAccount`, whose endpoint documents it.
    *
-   * Ignored by `getEvents`: `GET /api/v2/events` documents no `chain` parameter and does not
-   * filter on one, so a request for `chain=solana` still returns Ethereum events. The SDK no
-   * longer sends it there rather than implying a filter that never applied.
+   * Ignored by `getEvents` and `getEventsByCollection`, whose endpoints document no `chain`
+   * parameter. `getEventsByNFT` already identifies the chain in its path. The SDK does not send
+   * this query to those endpoints rather than implying a second filter they never apply.
    */
   chain?: string
 }
