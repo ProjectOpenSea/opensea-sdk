@@ -25,6 +25,7 @@ import {
   getListingPaymentToken,
   getNativeWrapTokenAddress,
   getOfferPaymentToken,
+  getOfferPaymentTokenDecimals,
   getSeaportAddress,
   getSignedZone,
   usesAlternateProtocol,
@@ -266,6 +267,18 @@ describe("Utils: chain", () => {
       expect(() => getOfferPaymentToken("UNKNOWN_CHAIN" as Chain)).toThrow(
         "Unknown offer currency for UNKNOWN_CHAIN",
       )
+    })
+  })
+
+  describe("getOfferPaymentTokenDecimals", () => {
+    test("returns six for the Arc and Stable Chain offer mirrors", () => {
+      expect(getOfferPaymentTokenDecimals(Chain.Arc)).toBe(6)
+      expect(getOfferPaymentTokenDecimals(Chain.StableChain)).toBe(6)
+    })
+
+    test("returns 18 for existing wrapped-native offer currencies", () => {
+      expect(getOfferPaymentTokenDecimals(Chain.Mainnet)).toBe(18)
+      expect(getOfferPaymentTokenDecimals(Chain.Base)).toBe(18)
     })
   })
 

@@ -34,6 +34,7 @@ import {
   getDefaultConduit,
   getListingPaymentToken,
   getOfferPaymentToken,
+  getOfferPaymentTokenDecimals,
   getSeaportAddress,
 } from "./utils/utils"
 
@@ -101,7 +102,8 @@ export class OpenSeaSDK extends BaseOpenSeaSDK {
     })
 
     const cachedPaymentTokenDecimals: { [address: string]: number } = {}
-    cachedPaymentTokenDecimals[getOfferPaymentToken(chain).toLowerCase()] = 18
+    cachedPaymentTokenDecimals[getOfferPaymentToken(chain).toLowerCase()] =
+      getOfferPaymentTokenDecimals(chain)
     cachedPaymentTokenDecimals[getListingPaymentToken(chain).toLowerCase()] = 18
 
     super({

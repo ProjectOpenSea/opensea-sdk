@@ -118,6 +118,17 @@ export const getOfferPaymentToken = (chain: Chain) => {
   }
 }
 
+/** Returns the decimals for the chain's default offer currency. */
+export const getOfferPaymentTokenDecimals = (chain: Chain): number => {
+  switch (chain) {
+    case Chain.Arc:
+    case Chain.StableChain:
+      return 6
+    default:
+      return 18
+  }
+}
+
 /**
  * Returns the default currency for listings on the given chain.
  * @param chain The chain to get the listing payment token for
