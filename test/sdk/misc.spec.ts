@@ -6,6 +6,7 @@ import {
 } from "../../src/constants"
 import {
   decodeTokenIds,
+  hasErrorCode,
   remapSharedStorefrontAddress,
 } from "../../src/utils/utils"
 import { BAYC_CONTRACT_ADDRESS } from "../utils/constants"
@@ -170,6 +171,23 @@ describe("SDK: misc", () => {
         "10000000000000000000000001",
         "10000000000000000000000002",
       ])
+    })
+  })
+
+  describe("hasErrorCode", () => {
+    it("should return true for an error carrying a code", () => {
+      expect(hasErrorCode({ code: "CALL_EXCEPTION" })).toBe(true)
+      expect(hasErrorCode(new Error("boom"))).toBe(false)
+    })
+
+    it("should return false for nullish input instead of throwing", () => {
+      // `null` and `undefined` are legal `unknown` values and both reach a
+      // `catch` binding (`throw null`, `Promise.reject()`). The guard read
+      // `.code` straight off the argument, so it threw a TypeError and hid the
+      // error its caller was about to rethrow.
+      expect(() => hasErrorCode(null)).not.toThrow()
+      expect(hasErrorCode(null)).toBe(false)
+      expect(hasErrorCode(undefined)).toBe(false)
     })
   })
 })
