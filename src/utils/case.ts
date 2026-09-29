@@ -84,6 +84,20 @@ function camelToSnake(key: string): string {
 }
 
 /**
+ * Whether a single character earns an underscore in front of it, i.e. whether
+ * {@link camelToSnake} would emit one.
+ *
+ * `Ch extends Uppercase<Ch>` is the wrong test for this. `Uppercase` is the
+ * identity on digits and on anything else without a case, so `"1" extends
+ * Uppercase<"1">` is true and every digit read as an uppercase letter. Comparing
+ * against `Lowercase` instead is true for exactly the characters `Lowercase`
+ * actually rewrites, which is the set the runtime `/[A-Z]/` matches.
+ */
+type IsUppercaseLetter<Ch extends string> = Ch extends Lowercase<Ch>
+  ? false
+  : true
+
+/**
  * Maps a camelCase string literal to snake_case at the type level.
  * `"isNsfw"` → `"is_nsfw"`. The inverse of {@link Camelize}.
  *
@@ -93,13 +107,13 @@ function camelToSnake(key: string): string {
  */
 type CamelToSnakeInner<S extends string> =
   S extends `${infer Head}${infer Tail}`
-    ? Head extends Uppercase<Head>
+    ? IsUppercaseLetter<Head> extends true
       ? `_${Lowercase<Head>}${CamelToSnakeInner<Tail>}`
       : `${Head}${CamelToSnakeInner<Tail>}`
     : S
 
 type CamelToSnake<S extends string> = S extends `${infer Head}${infer Tail}`
-  ? Head extends Uppercase<Head>
+  ? IsUppercaseLetter<Head> extends true
     ? `${Lowercase<Head>}${CamelToSnakeInner<Tail>}`
     : `${Head}${CamelToSnakeInner<Tail>}`
   : S

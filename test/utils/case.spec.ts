@@ -174,6 +174,33 @@ describe("Snakeize<T>", () => {
     type Out = Snakeize<In>
     expectTypeOf<Out>().toEqualTypeOf<{ my_key: number }>()
   })
+
+  test("no underscore before a digit, agreeing with the runtime", () => {
+    // `Uppercase<"1">` is `"1"`, so the old guard read every digit as an
+    // uppercase letter and the type promised `chain_2_id` where the runtime
+    // writes `chain2_id`. Reading `body.chain_2_id` then type-checked and came
+    // back undefined. `expectTypeOf` is only checked by `check-types`; the
+    // runtime assertion below is what vitest runs.
+    type In = { chain2Id: string; erc721TokenId: string }
+    type Out = Snakeize<In>
+    expectTypeOf<Out>().toEqualTypeOf<{
+      chain2_id: string
+      erc721_token_id: string
+    }>()
+
+    expect(snakeizeKeysDeep({ chain2Id: "1", erc721TokenId: "2" })).toEqual({
+      chain2_id: "1",
+      erc721_token_id: "2",
+    })
+  })
+
+  test("a leading underscore is not an uppercase letter either", () => {
+    // Same root cause: `Uppercase<"_">` is `"_"`. The runtime's `/[A-Z]/`
+    // leaves the key alone; the type used to add a second underscore.
+    type In = { _private: number }
+    expectTypeOf<Snakeize<In>>().toEqualTypeOf<{ _private: number }>()
+    expect(snakeizeKeysDeep({ _private: 1 })).toEqual({ _private: 1 })
+  })
 })
 
 describe("Camelize<T>", () => {
