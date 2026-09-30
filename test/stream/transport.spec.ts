@@ -575,6 +575,49 @@ describe("server-side filter widening", () => {
 
     transport.disconnect()
   })
+
+  test("a stale reply for the join a widen replaced does not double-fire onSubscribed", async () => {
+    // The two subscribe calls below fire back to back, so the first join's
+    // reply has not arrived yet when the second one (wanting a different
+    // filter) triggers a widen and re-join. Regression test for that old
+    // join's reply, once it does arrive, firing onSubscribed a second time
+    // for every subscriber on the topic.
+    const transport = makeTransport()
+    transport.connect()
+    await flushMicrotasks()
+
+    const onSubscribed1 = vi.fn()
+    const onSubscribed2 = vi.fn()
+    transport.subscribe(
+      "collection:c1",
+      { eventTypes: [EventType.ITEM_SOLD] },
+      { onSubscribed: onSubscribed1 },
+    )
+    transport.subscribe(
+      "collection:c1",
+      { eventTypes: [EventType.ITEM_LISTED] },
+      { onSubscribed: onSubscribed2 },
+    )
+
+    const staleAndCurrent = server.framesOfType("phx_join")
+    const staleRef = staleAndCurrent[0][1] as string
+    const currentRef = staleAndCurrent[1][1] as string
+
+    server.send(
+      encodeReply({ ref: currentRef, topic: "collection:c1", status: "ok" }),
+    )
+    expect(onSubscribed1).toHaveBeenCalledTimes(1)
+    expect(onSubscribed2).toHaveBeenCalledTimes(1)
+
+    // The server answers the superseded join late.
+    server.send(
+      encodeReply({ ref: staleRef, topic: "collection:c1", status: "ok" }),
+    )
+    expect(onSubscribed1).toHaveBeenCalledTimes(1)
+    expect(onSubscribed2).toHaveBeenCalledTimes(1)
+
+    transport.disconnect()
+  })
 })
 
 describe("unsubscribe acknowledgement", () => {

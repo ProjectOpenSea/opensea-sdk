@@ -446,6 +446,17 @@ export class PhoenixChannelsTransport implements StreamTransport {
   }
 
   private sendJoin(subscription: PhoenixSubscription): void {
+    // A new join overwrites this subscription's joinRef, but the previous
+    // join's reply may still be in flight (a filter widen or a rejoin can
+    // both fire before the server has answered the join they're replacing).
+    // Cancel that pending reply first: left in `pendingReplies`, it is still
+    // keyed by its own ref, so when the server eventually answers it,
+    // `handleReply` finds it, invokes its (stale) success/error handler, and
+    // every subscriber's onSubscribed or onSubscribeError fires a second
+    // time for what is, from the caller's side, one subscription.
+    if (subscription.joinRef !== null) {
+      this.cancelPendingReply(subscription.joinRef)
+    }
     const ref = this.nextRef()
     subscription.joinRef = ref
     const payload = subscription.eventTypes
@@ -735,6 +746,20 @@ export class PhoenixChannelsTransport implements StreamTransport {
       )
     }, this.timeout)
     this.pendingReplies.set(ref, { handler, timer })
+  }
+
+  /**
+   * Discard a single pending reply without invoking its handler or the
+   * timeout it would otherwise fire. Used when a new join is about to make
+   * an older, still-unanswered one moot.
+   */
+  private cancelPendingReply(ref: string): void {
+    const pending = this.pendingReplies.get(ref)
+    if (!pending) {
+      return
+    }
+    clearTimeout(pending.timer)
+    this.pendingReplies.delete(ref)
   }
 
   /**
