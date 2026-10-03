@@ -50,7 +50,7 @@ function snakeToCamel(key: string): string {
  * format the API expects.
  *
  * **Acronym caveat:** every uppercase character emits its own underscore, so
- * acronym-style keys are split between letters: `URL` → `url`,
+ * acronym-style keys are split between letters: `URL` → `u_r_l`,
  * `userID` → `user_i_d`, `NFTContract` → `n_f_t_contract`. This is deliberate
  * (the roundtrip with `camelizeKeysDeep` is consistent under generic rules)
  * but consumers calling `snakeizeKeysDeep` directly should avoid PascalCase

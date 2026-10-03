@@ -606,6 +606,43 @@ describe("server-side filter widening", () => {
     expect(onSubscribedListed).toHaveBeenCalledTimes(1)
     transport.disconnect()
   })
+
+  test("a late subscriber that widens is told once, after the widened join", async () => {
+    const transport = makeTransport()
+    const onError = vi.fn()
+    transport.onError(onError)
+    transport.connect()
+    await flushMicrotasks()
+
+    transport.subscribe("collection:c1", { eventTypes: [EventType.ITEM_SOLD] })
+    const [, firstRef, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: firstRef as string, topic }))
+
+    const failure = new Error("late subscriber blew up")
+    const late = vi.fn(() => {
+      throw failure
+    })
+    expect(() =>
+      transport.subscribe(
+        "collection:c1",
+        { eventTypes: [EventType.ITEM_LISTED] },
+        { onSubscribed: late },
+      ),
+    ).not.toThrow()
+
+    const joins = server.framesOfType("phx_join")
+    expect(joins).toHaveLength(2)
+    expect(joins[1][4]).toEqual({
+      event_types: [EventType.ITEM_SOLD, EventType.ITEM_LISTED],
+    })
+    expect(late).not.toHaveBeenCalled()
+
+    server.send(encodeReply({ ref: joins[1][1] as string, topic }))
+
+    expect(late).toHaveBeenCalledTimes(1)
+    expect(onError).toHaveBeenCalledWith(failure)
+    transport.disconnect()
+  })
 })
 
 describe("unsubscribe acknowledgement", () => {
@@ -781,6 +818,30 @@ describe("consumer callbacks cannot break the state machine", () => {
     expect(second).toHaveBeenCalledTimes(1)
     expect(onError).toHaveBeenCalledWith(expect.any(Error))
 
+    transport.disconnect()
+  })
+
+  test("a throwing onSubscribed on an already-joined topic is reported, not thrown", async () => {
+    const transport = makeTransport()
+    const onError = vi.fn()
+    transport.onError(onError)
+    transport.connect()
+    await flushMicrotasks()
+
+    transport.subscribe("collection:c1")
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    const failure = new Error("late subscriber blew up")
+    expect(() =>
+      transport.subscribe("collection:c1", undefined, {
+        onSubscribed: () => {
+          throw failure
+        },
+      }),
+    ).not.toThrow()
+
+    expect(onError).toHaveBeenCalledWith(failure)
     transport.disconnect()
   })
 })

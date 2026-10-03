@@ -1,5 +1,12 @@
 # @opensea/sdk
 
+## 12.11.2
+
+### Patch Changes
+
+- 731e93d: Docs: the package entry `@example` now passes `apiKey`, and the `snakeizeKeysDeep` JSDoc gives the real output for `URL` (`u_r_l`).
+- 75baa66: Stream: a late subscriber to an already-joined topic can no longer stop the server-side filter from widening. Its `onSubscribed` now runs after the widen, fires once when the widened join is accepted rather than before, and a throw from it goes to `onError` instead of escaping `subscribe()`.
+
 ## 12.11.1
 
 ### Patch Changes
@@ -860,7 +867,7 @@
   - `OpenSeaAPI.requestInstantApiKey` (and the `OpenSeaSDK` passthrough) now camelizes its response — previously it called `fetch()` directly and returned snake_case despite the typed surface promising `{ apiKey, expiresAt, ... }`. JSDoc examples on both methods corrected.
   - `OpenSeaRateLimitError.responseBody` is now camelized to match the rest of the boundary contract.
   - `_fetch` error envelope is camelized before reading `.errors`, so nested snake_case keys no longer leak into thrown Error messages.
-  - `camelToSnake` no longer emits a leading underscore for PascalCase / acronym keys (`URL` → `url`, `MyKey` → `my_key`). The corresponding `Snakeize<T>` type was updated to match the runtime.
+  - `camelToSnake` no longer emits a leading underscore for PascalCase / acronym keys (`URL` → `u_r_l`, `MyKey` → `my_key`). The corresponding `Snakeize<T>` type was updated to match the runtime.
   - `OpenSeaAccount.socialMediaAccounts` defends against the wire returning `null` (the previous hand-rolled converter did `?? []`; the new pipeline did not).
   - Dead-code OrderV2/Order casts dropped in `fulfillment.ts` — both branches read the same camelCase property after the migration.
 

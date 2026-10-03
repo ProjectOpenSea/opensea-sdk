@@ -377,8 +377,6 @@ do {
 To buy an item, you need to **fulfill a listing**. To do that, it's just one call:
 
 ```typescript
-import { OrderSide } from "@opensea/sdk";
-
 const order = await openseaSDK.api.orders.getOrderByHash(
   "0x...",
   "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC", // Seaport 1.6
@@ -400,8 +398,6 @@ If the order is a listing, the taker is the _buyer_ and this will prompt the buy
 Similar to fulfilling listings above, you need to fulfill an offer on an item you own to receive the tokens in the offer.
 
 ```typescript
-import { OrderSide } from "@opensea/sdk";
-
 const order = await openseaSDK.api.orders.getOrderByHash(
   "0x...",
   "0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC", // Seaport 1.6

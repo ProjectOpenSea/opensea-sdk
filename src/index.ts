@@ -28,7 +28,8 @@ export * from "./utils"
  * import { OpenSeaSDK, Chain } from '@opensea/sdk'
  * const provider = new ethers.JsonRpcProvider('https://mainnet.infura.io')
  * const client = new OpenSeaSDK(provider, {
- *   chain: Chain.Mainnet
+ *   chain: Chain.Mainnet,
+ *   apiKey: 'YOUR_OPENSEA_API_KEY',
  * })
  * ```
  */

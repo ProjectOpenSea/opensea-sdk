@@ -419,12 +419,13 @@ export class PhoenixChannelsTransport implements StreamTransport {
       // callbacks too, otherwise a second subscriber never learns the outcome.
       if (callbacks) {
         existing.callbackList.push(callbacks)
-        // A settled subscription has no reply left to fire, so report now.
-        if (existing.joined) {
-          callbacks.onSubscribed?.()
-        }
       }
       this.widenFilterIfNeeded(existing, options?.eventTypes)
+      // A settled subscription has no reply left to fire, so report now. A
+      // widen sends a new join instead, and its reply reports to everyone.
+      if (callbacks && existing.joined) {
+        this.safeInvoke(() => callbacks.onSubscribed?.())
+      }
       return existing
     }
 
