@@ -1952,14 +1952,6 @@ export class OpenSeaAPI {
   }
 
   /**
-   * Creates a rate limit error with status code and retry-after information.
-   * This is async because it attempts to parse the response body. If the body
-   * is malformed JSON, responseBody will be undefined (intentional — the error
-   * itself is more important than the body).
-   * @param response The HTTP response object from the API
-   * @returns An enhanced Error object with statusCode, retryAfter and responseBody properties
-   */
-  /**
    * Builds an error carrying the HTTP status. Every non-OK response goes through here or through
    * {@link _createRateLimitError}, so `statusCode` is present on every API error rather than only
    * on rate limits. A caller that scrubs remote error text still has the status to retry on.
@@ -1981,6 +1973,14 @@ export class OpenSeaAPI {
     return error
   }
 
+  /**
+   * Creates a rate limit error with status code and retry-after information.
+   * This is async because it attempts to parse the response body. If the body
+   * is malformed JSON, responseBody will be undefined (intentional — the error
+   * itself is more important than the body).
+   * @param response The HTTP response object from the API
+   * @returns An enhanced Error object with statusCode, retryAfter and responseBody properties
+   */
   private async _createRateLimitError(
     response: Response,
   ): Promise<OpenSeaRateLimitError> {
