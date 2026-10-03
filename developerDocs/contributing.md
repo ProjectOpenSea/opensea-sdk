@@ -15,7 +15,7 @@ Contributions are welcome! Please use GitHub issues for suggestions/concerns - i
 
 **Prerequisites**
 
-- Node.js 20 or higher
+- Node.js 22 or higher
 - npm or yarn
 
 **Initial Setup**

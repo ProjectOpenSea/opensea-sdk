@@ -11,7 +11,7 @@ hidden: false
 
 # Installation
 
-Node.js version 20 or higher is required for the SDK. If you have Node Version Manager (nvm), run `nvm use 20`.
+Node.js version 22 or higher is required for the SDK. If you have Node Version Manager (nvm), run `nvm use 22`.
 
 Then in your project, run:
 
