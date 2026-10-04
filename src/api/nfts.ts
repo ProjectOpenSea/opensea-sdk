@@ -149,6 +149,15 @@ export class NFTsAPI {
 
   /**
    * Validate NFT metadata by fetching and parsing it.
+   *
+   * `ignoreCachedItemUrls` is `ignore_cached_item_urls` on the wire. This is the
+   * one query string in the SDK built by hand — `post` takes a body, not a query
+   * object, so nothing snakeizes it — and every parameter the API documents is
+   * snake_case. Sending the camelCase spelling put an undocumented parameter on
+   * the URL, which the server accepts and ignores, so a caller asking for a
+   * re-fetch from source got the cached item URLs back with no error to notice.
+   * Same silent-failure mode as the deprecated `next` in place of `cursor` that
+   * `test/api/queryArgsDrift.spec.ts` was written for.
    */
   async validateMetadata(
     address: string,
@@ -158,7 +167,12 @@ export class NFTsAPI {
   ): Promise<ValidateMetadataResponse> {
     let path = getValidateMetadataPath(chain, address, identifier)
     if (ignoreCachedItemUrls !== undefined) {
-      path += `?ignoreCachedItemUrls=${ignoreCachedItemUrls}`
+      // Built with URLSearchParams, like every other hand-assembled query string
+      // in the package, so `false` is sent rather than dropped.
+      const query = new URLSearchParams({
+        ignore_cached_item_urls: String(ignoreCachedItemUrls),
+      })
+      path += `?${query}`
     }
     const response = await this.fetcher.post<ValidateMetadataResponse>(path)
     return response
