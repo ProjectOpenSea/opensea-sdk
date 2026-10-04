@@ -214,7 +214,7 @@ export const getListingPaymentToken = (chain: Chain) => {
     case Chain.Polygon:
       return "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619" // WETH
     case Chain.Avalanche:
-      return "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7" // WETH
+      return "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7" // WAVAX
     case Chain.BeraChain:
       return "0x0000000000000000000000000000000000000000" // BERA
     case Chain.Sei:
