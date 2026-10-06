@@ -435,6 +435,95 @@ describe("subscribe acknowledgement", () => {
     transport.disconnect()
   })
 
+  test("a caller whose handler was removed is not notified after a rejoin", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({ reconnectAfterMs: () => 10 })
+    transport.connect()
+    await flushMicrotasks()
+
+    const removed = vi.fn()
+    const remaining = vi.fn()
+    const off = transport
+      .subscribe("collection:c1", undefined, { onSubscribed: removed })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    transport
+      .subscribe("collection:c1", undefined, { onSubscribed: remaining })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    off()
+    server.dropConnection()
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    const [, rejoinRef, rejoinTopic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: rejoinRef as string, topic: rejoinTopic }))
+
+    expect(removed).toHaveBeenCalledTimes(1)
+    expect(remaining).toHaveBeenCalledTimes(2)
+    transport.disconnect()
+  })
+
+  test("a caller keeps its callbacks until its last handler is removed", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({ reconnectAfterMs: () => 10 })
+    transport.connect()
+    await flushMicrotasks()
+
+    const caller = vi.fn()
+    const subscription = transport.subscribe("collection:c1", undefined, {
+      onSubscribed: caller,
+    })
+    const offSold = subscription.on(EventType.ITEM_SOLD, vi.fn())
+    subscription.on(EventType.ITEM_LISTED, vi.fn())
+    transport
+      .subscribe("collection:c1", undefined, {})
+      .on(EventType.ITEM_SOLD, vi.fn())
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    // Removing the same handler twice must not count as removing the other.
+    offSold()
+    offSold()
+    server.dropConnection()
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    const [, rejoinRef, rejoinTopic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: rejoinRef as string, topic: rejoinTopic }))
+
+    expect(caller).toHaveBeenCalledTimes(2)
+    transport.disconnect()
+  })
+
+  test("a caller that registers again after removing its handlers is notified again", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({ reconnectAfterMs: () => 10 })
+    transport.connect()
+    await flushMicrotasks()
+
+    // A sibling keeps the topic alive while the caller has no handlers.
+    transport
+      .subscribe("collection:c1", undefined, {})
+      .on(EventType.ITEM_SOLD, vi.fn())
+    const caller = vi.fn()
+    const subscription = transport.subscribe("collection:c1", undefined, {
+      onSubscribed: caller,
+    })
+    subscription.on(EventType.ITEM_SOLD, vi.fn())()
+    subscription.on(EventType.ITEM_SOLD, vi.fn())
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    server.dropConnection()
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    const [, rejoinRef, rejoinTopic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: rejoinRef as string, topic: rejoinTopic }))
+
+    expect(caller).toHaveBeenCalledTimes(2)
+    transport.disconnect()
+  })
+
   test("a reply for one topic does not settle another", async () => {
     const transport = makeTransport()
     transport.connect()

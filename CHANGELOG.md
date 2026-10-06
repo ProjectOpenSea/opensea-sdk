@@ -1,5 +1,15 @@
 # @opensea/sdk
 
+## 12.11.3
+
+### Patch Changes
+
+- e83546e: Docs: `_createRateLimitError` carries its own JSDoc again (it had been left above `_createApiError`), the Avalanche case of `getListingPaymentToken` labels its address WAVAX instead of WETH, and the quick start, overview and contributing guides state Node 22 as the minimum, matching `engines.node`.
+- 86b3bcd: Stream: removing a listener now also drops that caller's `onSubscribed` and `onSubscribeError` callbacks once it has no handlers left on the topic. Before, a caller that unsubscribed from a topic another listener kept alive was still notified on every rejoin, and repeated add and remove cycles kept growing the topic's callback list.
+- Updated dependencies [e83546e]
+- Updated dependencies [6b30bd0]
+  - @opensea/api-types@0.16.0
+
 ## 12.11.2
 
 ### Patch Changes

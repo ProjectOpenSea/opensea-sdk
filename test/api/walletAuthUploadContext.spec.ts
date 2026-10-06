@@ -40,7 +40,7 @@ describe("wallet-auth upload contexts", () => {
     const api = new OpenSeaAPI({ apiKey: "key", authToken: "jwt" })
 
     const profile = await api.walletAuth.createProfileImageUpload({
-      imageType: "PROFILE",
+      imageType: "profile_picture",
       contentType: "image/png",
     })
     const dropMedia = await api.walletAuth.createDropItemMediaUpload("drop", {
@@ -66,7 +66,7 @@ describe("wallet-auth upload contexts", () => {
       filenames: [],
     }
     const profileImageBody: WalletAuthRequest<"upload_profile_image"> = {
-      imageType: "PROFILE",
+      imageType: "profile_picture",
       contentType: "image/png",
     }
     const calls = [

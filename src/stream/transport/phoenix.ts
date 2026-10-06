@@ -426,7 +426,7 @@ export class PhoenixChannelsTransport implements StreamTransport {
       if (callbacks && existing.joined) {
         this.safeInvoke(() => callbacks.onSubscribed?.())
       }
-      return existing
+      return callbacks ? this.callerHandle(existing, callbacks) : existing
     }
 
     const subscription = new PhoenixSubscription(
@@ -443,7 +443,50 @@ export class PhoenixChannelsTransport implements StreamTransport {
     if (this.isConnected()) {
       this.sendJoin(subscription)
     }
-    return subscription
+    return callbacks ? this.callerHandle(subscription, callbacks) : subscription
+  }
+
+  /**
+   * The topic is shared, so the subscription alone cannot tell which caller
+   * registered a handler. Each caller with callbacks gets a handle that counts
+   * its own handlers, and once the last one is removed its callbacks leave the
+   * shared list until the caller registers a handler again. Otherwise every
+   * rejoin would still report to a caller that has stopped listening.
+   */
+  private callerHandle(
+    subscription: PhoenixSubscription,
+    callbacks: SubscribeCallbacks,
+  ): StreamSubscription {
+    let liveHandlers = 0
+    let detached = false
+    return {
+      topic: subscription.topic,
+      on: (event, handler) => {
+        const off = subscription.on(event, handler)
+        if (detached) {
+          subscription.callbackList.push(callbacks)
+          detached = false
+        }
+        liveHandlers += 1
+        let removed = false
+        return () => {
+          if (removed) {
+            return
+          }
+          removed = true
+          liveHandlers -= 1
+          if (liveHandlers === 0) {
+            const index = subscription.callbackList.indexOf(callbacks)
+            if (index !== -1) {
+              subscription.callbackList.splice(index, 1)
+            }
+            detached = true
+          }
+          off()
+        }
+      },
+      unsubscribe: onUnsubscribed => subscription.unsubscribe(onUnsubscribed),
+    }
   }
 
   private sendJoin(subscription: PhoenixSubscription): void {
