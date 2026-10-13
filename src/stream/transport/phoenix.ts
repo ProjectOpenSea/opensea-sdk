@@ -508,22 +508,28 @@ export class PhoenixChannelsTransport implements StreamTransport {
           subscription.joined = true
           subscription.rejoinTries = 0
           this.log(`subscribed to "${subscription.topic}"`)
-          for (const callbacks of subscription.callbackList) {
-            this.safeInvoke(() => callbacks.onSubscribed?.())
+          for (const callbacks of [...subscription.callbackList]) {
+            if (subscription.callbackList.includes(callbacks)) {
+              this.safeInvoke(() => callbacks.onSubscribed?.())
+            }
           }
         } else {
           this.log(`failed to subscribe to "${subscription.topic}"`)
           const error = new Error(
             `Subscribe to "${subscription.topic}" failed: ${status}`,
           )
-          for (const callbacks of subscription.callbackList) {
-            this.safeInvoke(() => callbacks.onSubscribeError?.(error))
+          for (const callbacks of [...subscription.callbackList]) {
+            if (subscription.callbackList.includes(callbacks)) {
+              this.safeInvoke(() => callbacks.onSubscribeError?.(error))
+            }
           }
         }
       },
       reason => {
-        for (const callbacks of subscription.callbackList) {
-          this.safeInvoke(() => callbacks.onSubscribeError?.(reason))
+        for (const callbacks of [...subscription.callbackList]) {
+          if (subscription.callbackList.includes(callbacks)) {
+            this.safeInvoke(() => callbacks.onSubscribeError?.(reason))
+          }
         }
       },
     )

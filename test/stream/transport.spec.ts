@@ -394,6 +394,98 @@ describe("subscribe acknowledgement", () => {
     transport.disconnect()
   })
 
+  test("removing a handler in its join callback does not skip the next caller", async () => {
+    const transport = makeTransport()
+    transport.connect()
+    await flushMicrotasks()
+
+    let offFirst = () => {}
+    const first = vi.fn(() => offFirst())
+    const second = vi.fn()
+    offFirst = transport
+      .subscribe("collection:c1", undefined, { onSubscribed: first })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    transport
+      .subscribe("collection:c1", undefined, { onSubscribed: second })
+      .on(EventType.ITEM_SOLD, vi.fn())
+
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    expect(first).toHaveBeenCalledTimes(1)
+    expect(second).toHaveBeenCalledTimes(1)
+    transport.disconnect()
+  })
+
+  test("a caller removed by another join callback is not notified", async () => {
+    const transport = makeTransport()
+    transport.connect()
+    await flushMicrotasks()
+
+    let offSecond = () => {}
+    const first = vi.fn(() => offSecond())
+    const second = vi.fn()
+    transport
+      .subscribe("collection:c1", undefined, { onSubscribed: first })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    offSecond = transport
+      .subscribe("collection:c1", undefined, { onSubscribed: second })
+      .on(EventType.ITEM_SOLD, vi.fn())
+
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic }))
+
+    expect(first).toHaveBeenCalledTimes(1)
+    expect(second).not.toHaveBeenCalled()
+    transport.disconnect()
+  })
+
+  test("removing a handler in its join error callback does not skip the next caller", async () => {
+    const transport = makeTransport()
+    transport.connect()
+    await flushMicrotasks()
+
+    let offFirst = () => {}
+    const first = vi.fn(() => offFirst())
+    const second = vi.fn()
+    offFirst = transport
+      .subscribe("collection:c1", undefined, { onSubscribeError: first })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    transport
+      .subscribe("collection:c1", undefined, { onSubscribeError: second })
+      .on(EventType.ITEM_SOLD, vi.fn())
+
+    const [, ref, topic] = server.framesOfType("phx_join")[0]
+    server.send(encodeReply({ ref: ref as string, topic, status: "error" }))
+
+    expect(first).toHaveBeenCalledTimes(1)
+    expect(second).toHaveBeenCalledTimes(1)
+    transport.disconnect()
+  })
+
+  test("removing a handler on join timeout does not skip the next caller", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({ timeout: 500 })
+    transport.connect()
+    await flushMicrotasks()
+
+    let offFirst = () => {}
+    const first = vi.fn(() => offFirst())
+    const second = vi.fn()
+    offFirst = transport
+      .subscribe("collection:c1", undefined, { onSubscribeError: first })
+      .on(EventType.ITEM_SOLD, vi.fn())
+    transport
+      .subscribe("collection:c1", undefined, { onSubscribeError: second })
+      .on(EventType.ITEM_SOLD, vi.fn())
+
+    vi.advanceTimersByTime(500)
+
+    expect(first).toHaveBeenCalledTimes(1)
+    expect(second).toHaveBeenCalledTimes(1)
+    transport.disconnect()
+  })
+
   test("a second subscriber to a joined topic is told immediately", async () => {
     const transport = makeTransport()
     transport.connect()
