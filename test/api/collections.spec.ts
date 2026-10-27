@@ -117,7 +117,7 @@ describe("API: CollectionsAPI", () => {
   })
 
   describe("getTopPfpCollections", () => {
-    test("ranks collections with the limit and chain", async () => {
+    test("ranks collections with the limit and chains", async () => {
       const mockResponse = {
         collections: [{ rank: 1, pfpWearerCount: 42 }],
       } as unknown as TopPfpCollectionsResponse
@@ -125,12 +125,12 @@ describe("API: CollectionsAPI", () => {
 
       const result = await collectionsAPI.getTopPfpCollections({
         limit: 10,
-        chain: Chain.Base,
+        chains: [Chain.Base],
       })
 
       expect(mockGet).toHaveBeenCalledWith("/api/v2/pfp/top-collections", {
         limit: 10,
-        chain: "base",
+        chains: ["base"],
       })
       expect(result).toEqual(mockResponse)
     })

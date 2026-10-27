@@ -1,5 +1,14 @@
 # @opensea/sdk
 
+## 12.13.2
+
+### Patch Changes
+
+- c06c3a6: Collection offers made with `traitType` and `traitValue` now send them as a one-element `criteria.traits` array instead of the deprecated single `criteria.trait` field, on both `POST /api/v2/offers/build` and `POST /api/v2/offers`. The API treats the two shapes the same, so the offer is unchanged. The `traitType` and `traitValue` arguments keep working.
+- 09ed4ac: `opensea collections top-pfp --chain <chain>` and `OpenSeaCLI.collections.topPfp({ chain })` now send the chain as `chains`, because `GET /api/v2/pfp/top-collections` deprecated its `chain` parameter in favor of `chains`. The ranking is the same. The `getTopPfpCollections` doc comment now points to `args.chains`.
+- Updated dependencies [002e5ae]
+  - @opensea/api-types@0.17.1
+
 ## 12.13.1
 
 ### Patch Changes

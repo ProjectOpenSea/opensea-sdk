@@ -41,7 +41,7 @@ describe("Orders: utils", () => {
       })
     })
 
-    test("should add trait criteria when both traitType and traitValue are provided", () => {
+    test("sends traitType and traitValue as a one-element traits array", () => {
       const protocolData = { parameters: {} } as any as ProtocolData
       const result = getPostCollectionOfferPayload(
         "boredapeyachtclub",
@@ -51,11 +51,10 @@ describe("Orders: utils", () => {
         "Blue",
       )
 
-      expect(result.criteria).toHaveProperty("trait")
-      expect((result.criteria as any).trait).toEqual({
-        type: "Background",
-        value: "Blue",
-      })
+      expect(result.criteria.traits).toEqual([
+        { type: "Background", value: "Blue" },
+      ])
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should not add trait criteria when only traitType is provided", () => {
@@ -67,7 +66,8 @@ describe("Orders: utils", () => {
         "Background",
       )
 
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria.traits).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should not add trait criteria when only traitValue is provided", () => {
@@ -80,7 +80,8 @@ describe("Orders: utils", () => {
         "Blue",
       )
 
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria.traits).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should add traits array when provided", () => {
@@ -119,7 +120,7 @@ describe("Orders: utils", () => {
 
       expect(result.criteria).toHaveProperty("traits")
       expect((result.criteria as any).traits).toEqual(traits)
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should not add traits when empty array is provided", () => {
@@ -134,7 +135,7 @@ describe("Orders: utils", () => {
       )
 
       expect((result.criteria as any).traits).toBeUndefined()
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should add numericTraits when provided", () => {
@@ -213,7 +214,7 @@ describe("Orders: utils", () => {
       })
     })
 
-    test("should add trait criteria when both traitType and traitValue are provided", () => {
+    test("sends traitType and traitValue as a one-element traits array", () => {
       const result = getBuildCollectionOfferPayload(
         "0xOfferer",
         3,
@@ -224,11 +225,8 @@ describe("Orders: utils", () => {
         "Crown",
       )
 
-      expect(result.criteria).toHaveProperty("trait")
-      expect((result.criteria as any).trait).toEqual({
-        type: "Hat",
-        value: "Crown",
-      })
+      expect(result.criteria.traits).toEqual([{ type: "Hat", value: "Crown" }])
+      expect(result.criteria).not.toHaveProperty("trait")
       expect(result.offer_protection_enabled).toBe(false)
     })
 
@@ -270,7 +268,7 @@ describe("Orders: utils", () => {
 
       expect(result.criteria).toHaveProperty("traits")
       expect((result.criteria as any).traits).toEqual(traits)
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should not add traits when empty array is provided", () => {
@@ -286,7 +284,7 @@ describe("Orders: utils", () => {
       )
 
       expect((result.criteria as any).traits).toBeUndefined()
-      expect((result.criteria as any).trait).toBeUndefined()
+      expect(result.criteria).not.toHaveProperty("trait")
     })
 
     test("should add numericTraits when provided", () => {

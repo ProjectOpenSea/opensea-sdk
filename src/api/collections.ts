@@ -234,7 +234,8 @@ export class CollectionsAPI {
 
   /**
    * Fetch collections ranked by how many accounts wear one of their verified NFTs as a profile
-   * picture. Omit `args.chain` to rank across every chain.
+   * picture. Pass `args.chains` to count wearers on those chains only, or omit it to rank across
+   * every chain. `args.chain` is deprecated: use `chains`.
    */
   async getTopPfpCollections(
     args: GetTopPfpCollectionsArgs,

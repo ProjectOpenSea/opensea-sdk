@@ -30,7 +30,6 @@ export const getPostCollectionOfferPayload = (
     } as {
       collection: { slug: string }
       traits?: Array<{ type: string; value: string }>
-      trait?: { type: string; value: string }
       numericTraits?: Array<{ type: string; min?: number; max?: number }>
     },
     protocol_data: protocolData,
@@ -40,7 +39,7 @@ export const getPostCollectionOfferPayload = (
   if (traits && traits.length > 0) {
     payload.criteria.traits = traits
   } else if (traitType && traitValue) {
-    payload.criteria.trait = { type: traitType, value: traitValue }
+    payload.criteria.traits = [{ type: traitType, value: traitValue }]
   }
   if (numericTraits && numericTraits.length > 0) {
     payload.criteria.numericTraits = numericTraits
@@ -72,7 +71,6 @@ export const getBuildCollectionOfferPayload = (
     } as {
       collection: { slug: string }
       traits?: Array<{ type: string; value: string }>
-      trait?: { type: string; value: string }
       numericTraits?: Array<{ type: string; min?: number; max?: number }>
     },
     protocol_address: getSeaportAddress(chain),
@@ -82,7 +80,7 @@ export const getBuildCollectionOfferPayload = (
   if (traits && traits.length > 0) {
     payload.criteria.traits = traits
   } else if (traitType && traitValue) {
-    payload.criteria.trait = { type: traitType, value: traitValue }
+    payload.criteria.traits = [{ type: traitType, value: traitValue }]
   }
   if (numericTraits && numericTraits.length > 0) {
     payload.criteria.numericTraits = numericTraits
