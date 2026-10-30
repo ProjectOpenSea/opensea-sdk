@@ -379,8 +379,8 @@ export class PhoenixChannelsTransport implements StreamTransport {
     if (this.pendingHeartbeatRef !== null) {
       this.log("heartbeat timeout, tearing down connection")
       this.pendingHeartbeatRef = null
-      this.emitError(new Error("Heartbeat timeout"))
       this.teardownForReconnect()
+      this.emitError(new Error("Heartbeat timeout"))
       return
     }
     const ref = this.nextRef()
@@ -388,7 +388,13 @@ export class PhoenixChannelsTransport implements StreamTransport {
     this.push(null, ref, HEARTBEAT_TOPIC, HEARTBEAT_EVENT, {})
   }
 
-  /** Close the socket without marking the disconnect intentional. */
+  /**
+   * Close the socket without marking the disconnect intentional.
+   *
+   * The reconnect is scheduled before any consumer callback runs, and callers
+   * report errors only after this returns, so a callback that calls
+   * `disconnect()` cancels the reconnect instead of being overridden by it.
+   */
   private teardownForReconnect(): void {
     const socket = this.socket
     this.stopHeartbeat()
@@ -400,8 +406,8 @@ export class PhoenixChannelsTransport implements StreamTransport {
       socket.onopen = null
       socket.close(WS_CLOSE_NORMAL, "heartbeat timeout")
     }
-    this.clearPendingReplies()
     this.scheduleReconnect()
+    this.clearPendingReplies()
   }
 
   // ── Subscriptions ──────────────────────────────────────────────────

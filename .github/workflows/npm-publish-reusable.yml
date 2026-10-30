@@ -54,7 +54,16 @@ jobs:
 
       - run: npm publish --provenance --access public
 
+      # A stub keeps one version across many releases of the main package, so it publishes only
+      # when that version is not on npm yet. Any other registry answer fails the job.
       - if: ${{ inputs.stub-package-dir != '' }}
-        run: npm publish --provenance --access public
         working-directory: ${{ inputs.stub-package-dir }}
-        continue-on-error: true
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          status=$(curl -sS --retry 3 -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/${name/\//%2F}/${version}" || true)
+          case "$status" in
+            200) echo "$name@$version is already on npm, skipping the stub publish." ;;
+            404) npm publish --provenance --access public ;;
+            *) echo "::error::npm registry answered HTTP $status for $name@$version. The main package already published; the stub did not." && exit 1 ;;
+          esac

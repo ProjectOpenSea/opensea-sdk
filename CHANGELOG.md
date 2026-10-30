@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 12.13.3
+
+### Patch Changes
+
+- ec94228: Stream: calling `disconnect()` from `onError` after a heartbeat timeout, or from an unsubscribe callback settled by that teardown, now leaves the client stopped instead of reconnecting. A `disconnect()` followed by `connect()` in the handler keeps the new socket.
+
 ## 12.13.2
 
 ### Patch Changes

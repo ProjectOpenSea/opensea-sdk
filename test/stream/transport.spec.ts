@@ -151,6 +151,75 @@ describe("heartbeat", () => {
 
     transport.disconnect()
   })
+
+  test("a disconnect from the heartbeat timeout error handler stays disconnected", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({
+      heartbeatIntervalMs: 1000,
+      reconnectAfterMs: () => 10,
+    })
+    const onError = vi.fn(() => transport.disconnect())
+    transport.onError(onError)
+    transport.connect()
+    await flushMicrotasks()
+
+    vi.advanceTimersByTime(2000)
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      new Error("Heartbeat timeout"),
+    )
+
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    expect(server.connectionCount).toBe(1)
+    expect(transport.isConnected()).toBe(false)
+  })
+
+  test("a reconnect from the heartbeat timeout error handler keeps its socket", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({
+      heartbeatIntervalMs: 1000,
+      reconnectAfterMs: () => 10,
+    })
+    transport.onError(() => {
+      transport.disconnect()
+      transport.connect()
+    })
+    transport.connect()
+    await flushMicrotasks()
+
+    vi.advanceTimersByTime(2000)
+    await flushMicrotasks()
+    expect(server.connectionCount).toBe(2)
+    expect(transport.isConnected()).toBe(true)
+
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    expect(server.connectionCount).toBe(2)
+    expect(transport.isConnected()).toBe(true)
+
+    transport.disconnect()
+  })
+
+  test("a disconnect from an unsubscribe callback settled by heartbeat teardown stays disconnected", async () => {
+    vi.useFakeTimers()
+    const transport = makeTransport({
+      heartbeatIntervalMs: 1000,
+      reconnectAfterMs: () => 10,
+    })
+    transport.connect()
+    await flushMicrotasks()
+
+    const onUnsubscribed = vi.fn(() => transport.disconnect())
+    transport.subscribe("collection:c1").unsubscribe(onUnsubscribed)
+
+    vi.advanceTimersByTime(2000)
+    expect(onUnsubscribed).toHaveBeenCalledTimes(1)
+
+    vi.advanceTimersByTime(10)
+    await flushMicrotasks()
+    expect(server.connectionCount).toBe(1)
+    expect(transport.isConnected()).toBe(false)
+  })
 })
 
 describe("reconnect", () => {
