@@ -35,9 +35,14 @@ describe("Root exports", () => {
   })
 
   test("exports SIWX wallet-link helpers", async () => {
-    const { linkWalletWithSiwx, createSiwxMessage, parseSiwxMessage } =
-      await import("../src")
+    const {
+      linkWalletWithSiwx,
+      createSiwxMessage,
+      parseSiwxMessage,
+      requestWalletLinkNonce,
+    } = await import("../src")
     expect(typeof linkWalletWithSiwx).toBe("function")
+    expect(typeof requestWalletLinkNonce).toBe("function")
     expect(typeof createSiwxMessage).toBe("function")
     expect(typeof parseSiwxMessage).toBe("function")
   })

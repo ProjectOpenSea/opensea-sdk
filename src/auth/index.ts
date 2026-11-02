@@ -15,6 +15,7 @@ export type {
   CreateSiwxMessageOptions,
   LinkWalletWithSiwxOptions,
   ParseSiwxMessageResult,
+  RequestWalletLinkNonceOptions,
 } from "./siwx"
 export {
   chainArchToAccountType,
@@ -22,6 +23,7 @@ export {
   linkWalletWithSiwx,
   parseSiwxMessage,
   requestSiwxNonce,
+  requestWalletLinkNonce,
 } from "./siwx"
 export type {
   AuthenticateOptions,

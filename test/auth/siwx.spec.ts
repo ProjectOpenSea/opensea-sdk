@@ -5,7 +5,10 @@ import {
   linkWalletWithSiwx,
   parseSiwxMessage,
   requestSiwxNonce,
+  requestWalletLinkNonce,
 } from "../../src"
+
+const LINK_STATEMENT = "Link this wallet to your OpenSea account."
 
 describe("SIWX wallet-link helpers", () => {
   afterEach(() => {
@@ -97,19 +100,21 @@ describe("SIWX wallet-link helpers", () => {
     )
   })
 
-  it("posts the parsed SIWX message with the scoped bearer token", async () => {
+  it("signs the wallet-link nonce and statement and posts them with the scoped bearer token", async () => {
     const address = "0xA0Cf798816D4b9b9866b5330EEa46a18382f251e"
-    const signer = {
-      getAddress: async () => address,
-      signMessage: async () => "0xsigned",
-    }
+    const signMessage = vi.fn(async (_message: string) => "0xsigned")
+    const signer = { getAddress: async () => address, signMessage }
     const fetchSpy = vi.spyOn(globalThis, "fetch")
 
     fetchSpy
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ nonce: "abcd1234efgh5678" }), {
-          status: 200,
-        }),
+        new Response(
+          JSON.stringify({
+            nonce: "abcd1234efgh5678",
+            statement: LINK_STATEMENT,
+          }),
+          { status: 200 },
+        ),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ linkedWalletAddress: address }), {
@@ -123,14 +128,26 @@ describe("SIWX wallet-link helpers", () => {
       chainArch: "EVM",
       chainId: 1,
       apiBaseUrl: "https://api.opensea.io",
+      statement: "Click to sign in",
     })
 
     expect(result.linkedWalletAddress).toBe(address)
     expect(fetchSpy).toHaveBeenCalledTimes(2)
 
-    const [nonceUrl] = fetchSpy.mock.calls[0] as [string]
-    expect(nonceUrl).toBe("https://api.opensea.io/api/v2/auth/siwe/nonce")
-    expect(fetchSpy.mock.calls[0][1]).toMatchObject({ method: "POST" })
+    const [nonceUrl, nonceInit] = fetchSpy.mock.calls[0] as [
+      string,
+      RequestInit & { headers: Record<string, string> },
+    ]
+    expect(nonceUrl).toBe(
+      "https://api.opensea.io/api/v2/accounts/wallets/siwx/nonce",
+    )
+    expect(nonceInit.method).toBe("POST")
+    expect(nonceInit.headers.Authorization).toBe("Bearer token-123")
+    expect(nonceInit.headers["X-API-KEY"]).toBe("api-key")
+
+    const signed = signMessage.mock.calls[0][0]
+    expect(signed).toContain(`\n\n${LINK_STATEMENT}\n`)
+    expect(signed).toContain("\nNonce: abcd1234efgh5678\n")
 
     const [linkUrl, linkInit] = fetchSpy.mock.calls[1] as [
       string,
@@ -157,13 +174,48 @@ describe("SIWX wallet-link helpers", () => {
     expect(body.message.domain).toBe("opensea.io")
     expect(body.message.uri).toBe("https://opensea.io")
     expect(body.message.nonce).toBe("abcd1234efgh5678")
-    expect(body.message.statement).toBe(
-      "Click to sign in and accept the Platform Terms of Service (https://opensea.io/tos) and Privacy Policy (https://opensea.io/privacy).",
-    )
+    expect(body.message.statement).toBe(LINK_STATEMENT)
     expect(body.message.accountType).toBe("Ethereum")
   })
 
-  it("requests the wallet-link nonce from the auth service", async () => {
+  it("does not sign or link when the wallet-link nonce request is refused", async () => {
+    const signMessage = vi.fn(async () => "0xsigned")
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response("missing write:wallets scope", { status: 403 }),
+      )
+
+    await expect(
+      linkWalletWithSiwx(
+        {
+          getAddress: async () => "0xA0Cf798816D4b9b9866b5330EEa46a18382f251e",
+          signMessage,
+        },
+        { authToken: "token-123", chainArch: "EVM", chainId: 1 },
+      ),
+    ).rejects.toThrow(
+      "Wallet link nonce request failed (403): missing write:wallets scope",
+    )
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(signMessage).not.toHaveBeenCalled()
+  })
+
+  it("rejects a wallet-link nonce response without a statement", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ nonce: "abcd1234efgh5678" }), {
+        status: 200,
+      }),
+    )
+
+    await expect(
+      requestWalletLinkNonce({ authToken: "token-123" }),
+    ).rejects.toThrow(
+      "Wallet link nonce response is missing nonce or statement",
+    )
+  })
+
+  it("requests the sign-in nonce from the auth service", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(
@@ -209,9 +261,13 @@ describe("SIWX wallet-link helpers", () => {
 
     fetchSpy
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ nonce: "abcd1234efgh5678" }), {
-          status: 200,
-        }),
+        new Response(
+          JSON.stringify({
+            nonce: "abcd1234efgh5678",
+            statement: LINK_STATEMENT,
+          }),
+          { status: 200 },
+        ),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ linkedWalletAddress: address }), {

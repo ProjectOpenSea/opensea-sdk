@@ -7,8 +7,6 @@ import { type FetchImpl, fetchWith } from "../utils/fetchTransport"
 import type { AuthSigner } from "./types"
 
 const DEFAULT_API_BASE_URL = "https://api.opensea.io"
-const DEFAULT_STATEMENT =
-  "Click to sign in and accept the Platform Terms of Service (https://opensea.io/tos) and Privacy Policy (https://opensea.io/privacy)."
 
 export type ChainArch = "EVM" | "SVM" | "BITCOIN"
 export type AccountType = "Ethereum" | "Solana" | "Bitcoin"
@@ -48,7 +46,15 @@ export interface ParseSiwxMessageResult {
 }
 
 export interface LinkWalletWithSiwxOptions
-  extends Omit<CreateSiwxMessageOptions, "address" | "chainId" | "nonce"> {
+  extends Omit<
+    CreateSiwxMessageOptions,
+    "address" | "chainId" | "nonce" | "statement"
+  > {
+  /**
+   * @deprecated Ignored. The statement is issued by the API together with the wallet-link nonce
+   * and signed verbatim, so a caller-supplied statement can no longer be used.
+   */
+  statement?: string
   /** @deprecated Nonces now come from apiBaseUrl. */
   authBaseUrl?: string
   apiBaseUrl?: string
@@ -261,7 +267,8 @@ export function parseSiwxMessage(message: string): ParseSiwxMessageResult {
 }
 
 /**
- * Request a single-use nonce from the OpenSea API.
+ * Request a single-use sign-in nonce from the OpenSea API. Wallet linking uses
+ * {@link requestWalletLinkNonce} instead.
  *
  * @param apiBaseUrl Base URL to request the nonce from. Defaults to mainnet.
  * @param options Optional `fetch` transport, defaulting to the global `fetch`. Same seam as
@@ -289,8 +296,60 @@ export async function requestSiwxNonce(
   return data.nonce
 }
 
+export interface RequestWalletLinkNonceOptions {
+  /** Wallet-identity bearer token with the `write:wallets` scope. */
+  authToken: string
+  apiBaseUrl?: string
+  apiKey?: string
+  /** Same seam as {@link LinkWalletWithSiwxOptions.fetch}; it sees the auth token. */
+  fetch?: FetchImpl
+}
+
 /**
- * Fetch, sign, and submit a wallet-link request.
+ * Request a single-use wallet-link nonce and the statement to sign with it.
+ *
+ * The nonce is bound to the account behind `authToken` and valid for 10 minutes. Sign the
+ * returned statement verbatim; it is not a fixed string.
+ */
+export async function requestWalletLinkNonce(
+  options: RequestWalletLinkNonceOptions,
+): Promise<{ nonce: string; statement: string }> {
+  const apiBaseUrl = stripTrailingSlash(
+    options.apiBaseUrl ?? DEFAULT_API_BASE_URL,
+  )
+  const response = await fetchWith(
+    options.fetch,
+    `${apiBaseUrl}/api/v2/accounts/wallets/siwx/nonce`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${options.authToken}`,
+        ...(options.apiKey ? { "X-API-KEY": options.apiKey } : {}),
+      },
+    },
+  )
+  if (!response.ok) {
+    const body = await response.text().catch(() => "")
+    throw new Error(
+      `Wallet link nonce request failed (${response.status}): ${body || response.statusText}`,
+    )
+  }
+  const data = (await response.json()) as {
+    nonce?: unknown
+    statement?: unknown
+  }
+  if (typeof data.nonce !== "string" || typeof data.statement !== "string") {
+    throw new Error("Wallet link nonce response is missing nonce or statement")
+  }
+  return { nonce: data.nonce, statement: data.statement }
+}
+
+/**
+ * Fetch a wallet-link nonce, sign the SIWX message, and submit the wallet-link request.
+ *
+ * The message carries the nonce and statement issued by
+ * {@link requestWalletLinkNonce}; `options.statement` is ignored.
  */
 export async function linkWalletWithSiwx(
   signer: AuthSigner,
@@ -306,7 +365,12 @@ export async function linkWalletWithSiwx(
   const apiBaseUrl = stripTrailingSlash(
     options.apiBaseUrl ?? DEFAULT_API_BASE_URL,
   )
-  const nonce = await requestSiwxNonce(apiBaseUrl, { fetch: options.fetch })
+  const { nonce, statement } = await requestWalletLinkNonce({
+    authToken: options.authToken,
+    apiBaseUrl,
+    apiKey: options.apiKey,
+    fetch: options.fetch,
+  })
   const address = await signer.getAddress()
   const message = createSiwxMessage({
     address,
@@ -316,7 +380,7 @@ export async function linkWalletWithSiwx(
     domain: options.domain,
     uri: options.uri,
     version: options.version,
-    statement: options.statement ?? DEFAULT_STATEMENT,
+    statement,
     issuedAt: options.issuedAt,
     expirationTime: options.expirationTime,
     notBefore: options.notBefore,

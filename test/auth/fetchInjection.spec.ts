@@ -249,7 +249,9 @@ describe("auth transport injection", () => {
       const globalFetch = vi.spyOn(globalThis, "fetch")
       const injected = vi
         .fn()
-        .mockResolvedValueOnce(json({ nonce: "abcd1234efgh5678" }))
+        .mockResolvedValueOnce(
+          json({ nonce: "abcd1234efgh5678", statement: "Link this wallet." }),
+        )
         .mockResolvedValueOnce(json({ success: true }))
 
       await linkWalletWithSiwx(signer, {
@@ -264,7 +266,7 @@ describe("auth transport injection", () => {
 
       expect(injected).toHaveBeenCalledTimes(2)
       expect(String(injected.mock.calls[0][0])).toBe(
-        `${API_BASE}/api/v2/auth/siwe/nonce`,
+        `${API_BASE}/api/v2/accounts/wallets/siwx/nonce`,
       )
       expect(String(injected.mock.calls[1][0])).toBe(
         `${API_BASE}/api/v2/accounts/wallets/siwx`,
@@ -274,7 +276,8 @@ describe("auth transport injection", () => {
 
     test("linkWalletWithSiwx calls the transport with globalThis as its receiver", async () => {
       const responses = [
-        () => json({ nonce: "abcd1234efgh5678" }),
+        () =>
+          json({ nonce: "abcd1234efgh5678", statement: "Link this wallet." }),
         () => json({ success: true }),
       ]
       const impl = receiverStrict(() => {

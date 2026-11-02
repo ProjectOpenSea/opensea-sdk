@@ -1,5 +1,15 @@
 # @opensea/sdk
 
+## 12.14.0
+
+### Minor Changes
+
+- 97a9b4f: `linkWalletWithSiwx` now requests its nonce from `POST /api/v2/accounts/wallets/siwx/nonce`, authenticated with the same `authToken` and API key as the link call, and signs the statement that endpoint returns. Previously it used a sign-in nonce from `POST /api/v2/auth/siwe/nonce` and the sign-in statement, so a sign-in signature could be replayed to link a wallet. The new nonce is single-use, valid for 10 minutes, and bound to the token's account. The API keeps accepting the old flow for now and will reject it once clients have migrated, so upgrade before then.
+
+  The new `requestWalletLinkNonce({ authToken, apiBaseUrl?, apiKey?, fetch? })` export returns `{ nonce, statement }` for callers that build the SIWX message themselves; sign the statement verbatim. `requestSiwxNonce` is unchanged and remains the sign-in nonce.
+
+  `LinkWalletWithSiwxOptions.statement` is deprecated and ignored, because the server-issued statement must be signed as-is. `opensea auth link-wallet --statement` is likewise accepted but ignored.
+
 ## 12.13.3
 
 ### Patch Changes
