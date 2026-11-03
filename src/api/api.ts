@@ -146,6 +146,7 @@ import {
   type TokenTimeSeriesArgs,
   type TraitFilter,
   type TraitFloorsResponse,
+  type TraitOffersFilters,
   type TransactionReceiptRequest,
   type TransactionReceiptResponse,
   type TransferRequest,
@@ -290,6 +291,7 @@ export class OpenSeaAPI {
    * @param collectionSlug The slug of the collection.
    * @param limit The number of offers to return. Must be between 1 and 100. Default: 100
    * @param next The cursor for the next page of results. This is returned from a previous request.
+   * @param maker Only return offers made by this wallet address.
    * @returns The {@link GetOffersResponse} returned by the API.
    * @deprecated Use `api.offers.getAllOffers()`. Removed in the next major.
    */
@@ -297,8 +299,9 @@ export class OpenSeaAPI {
     collectionSlug: string,
     limit?: number,
     next?: string,
+    maker?: string,
   ): Promise<GetOffersResponse> {
-    return this.offers.getAllOffers(collectionSlug, limit, next)
+    return this.offers.getAllOffers(collectionSlug, limit, next, maker)
   }
 
   /**
@@ -307,6 +310,7 @@ export class OpenSeaAPI {
    * @param limit The number of listings to return. Must be between 1 and 100. Default: 100
    * @param next The cursor for the next page of results. This is returned from a previous request.
    * @param includePrivateListings Whether to include private listings (default: false)
+   * @param maker Only return listings made by this wallet address.
    * @returns The {@link GetListingsResponse} returned by the API.
    * @deprecated Use `api.listings.getAllListings()`. Removed in the next major.
    */
@@ -315,12 +319,14 @@ export class OpenSeaAPI {
     limit?: number,
     next?: string,
     includePrivateListings?: boolean,
+    maker?: string,
   ): Promise<GetListingsResponse> {
     return this.listings.getAllListings(
       collectionSlug,
       limit,
       next,
       includePrivateListings,
+      maker,
     )
   }
 
@@ -333,17 +339,19 @@ export class OpenSeaAPI {
    * @param next The cursor for the next page of results. This is returned from a previous request.
    * @param floatValue The value of the trait for decimal-based numeric traits.
    * @param intValue The value of the trait for integer-based numeric traits.
+   * @param filters Optional {@link TraitOffersFilters}: `mode`, a numeric range, or multi-trait `traits`.
    * @returns The {@link GetOffersResponse} returned by the API.
    * @deprecated Use `api.offers.getTraitOffers()`. Removed in the next major.
    */
   public async getTraitOffers(
     collectionSlug: string,
-    type: string,
-    value: string,
+    type: string | undefined,
+    value: string | undefined,
     limit?: number,
     next?: string,
     floatValue?: number,
     intValue?: number,
+    filters?: TraitOffersFilters,
   ): Promise<GetOffersResponse> {
     return this.offers.getTraitOffers(
       collectionSlug,
@@ -353,6 +361,7 @@ export class OpenSeaAPI {
       next,
       floatValue,
       intValue,
+      filters,
     )
   }
 
@@ -582,6 +591,7 @@ export class OpenSeaAPI {
    * @param limit The number of NFTs to retrieve. Must be greater than 0 and less than 51.
    * @param next Cursor to retrieve the next page of NFTs
    * @param traits Optional {@link TraitFilter} array. Returns 400 if a single trait matches more than 1000 items.
+   * @param hasAgentBinding Only return NFTs that do (`true`) or do not (`false`) have an ERC-8217 agent binding.
    * @returns The {@link ListNFTsResponse} returned by the API.
    * @deprecated Use `api.nfts.getNFTsByCollection()`. Removed in the next major.
    */
@@ -590,8 +600,15 @@ export class OpenSeaAPI {
     limit: number | undefined = undefined,
     next: string | undefined = undefined,
     traits: TraitFilter[] | undefined = undefined,
+    hasAgentBinding: boolean | undefined = undefined,
   ): Promise<ListNFTsResponse> {
-    return this.nfts.getNFTsByCollection(slug, limit, next, traits)
+    return this.nfts.getNFTsByCollection(
+      slug,
+      limit,
+      next,
+      traits,
+      hasAgentBinding,
+    )
   }
 
   /**

@@ -55,10 +55,11 @@ export class NFTsAPI {
     limit: number | undefined = undefined,
     next: string | undefined = undefined,
     traits: TraitFilter[] | undefined = undefined,
+    hasAgentBinding: boolean | undefined = undefined,
   ): Promise<ListNFTsResponse> {
     const response = await this.fetcher.get<ListNFTsResponse>(
       getListNFTsByCollectionPath(slug),
-      { limit, next, traits: encodeTraitsParam(traits) },
+      { limit, next, traits: encodeTraitsParam(traits), hasAgentBinding },
     )
     return response
   }

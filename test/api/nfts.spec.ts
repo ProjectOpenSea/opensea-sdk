@@ -90,6 +90,20 @@ describe("API: NFTsAPI", () => {
       })
     })
 
+    test("filters NFTs by agent binding", async () => {
+      mockGet.mockResolvedValue({ nfts: [], next: undefined })
+
+      await nftsAPI.getNFTsByCollection(
+        "test-collection",
+        undefined,
+        undefined,
+        undefined,
+        true,
+      )
+
+      expect(mockGet.mock.calls[0][1]).toEqual({ hasAgentBinding: true })
+    })
+
     test("fetches NFTs with both limit and pagination", async () => {
       const mockResponse = {
         nfts: [],

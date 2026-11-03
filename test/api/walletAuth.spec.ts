@@ -208,6 +208,11 @@ describe("WalletAuthAPI", () => {
         "/api/v2/profile/shelves/shelf-1",
         () => api.deleteProfileShelf("shelf-1"),
       ],
+      [
+        "POST",
+        "/api/v2/accounts/wallets/siwx/nonce",
+        () => api.getWalletLinkNonce(),
+      ],
       ["POST", "/api/v2/accounts/wallets/siwx", () => api.linkWallet(body)],
       [
         "DELETE",

@@ -100,6 +100,20 @@ export interface TraitFilter {
 }
 
 /**
+ * Filters for `getTraitOffers` beyond a single `type`/`value` pair. Derived from the spec's
+ * `get_offers_collection_trait` query params, except `traits`, which takes {@link TraitFilter}
+ * entries and is JSON-encoded on the wire.
+ * @category API Query Args
+ */
+export type TraitOffersFilters = Pick<
+  Camelize<OperationQueryParams<"get_offers_collection_trait">>,
+  "mode" | "minValue" | "maxValue"
+> & {
+  /** Multi-trait (`MULTI` mode) filters; offers must match all of them. */
+  traits?: TraitFilter[]
+}
+
+/**
  * Encode a {@link TraitFilter} array as the JSON-string form the API expects
  * on the `traits` query parameter, or `undefined` if the array is empty.
  * Callers spread the result into a query object; query encoders skip

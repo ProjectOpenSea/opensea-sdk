@@ -313,7 +313,7 @@ export interface RequestWalletLinkNonceOptions {
  */
 export async function requestWalletLinkNonce(
   options: RequestWalletLinkNonceOptions,
-): Promise<{ nonce: string; statement: string }> {
+): Promise<OperationResponse<"get_wallet_link_nonce">> {
   const apiBaseUrl = stripTrailingSlash(
     options.apiBaseUrl ?? DEFAULT_API_BASE_URL,
   )

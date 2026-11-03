@@ -35,12 +35,14 @@ export class ListingsAPI {
    * @param limit The number of listings to return
    * @param next The cursor for pagination
    * @param includePrivateListings Whether to include private listings (default: false)
+   * @param maker Only return listings made by this wallet address
    */
   async getAllListings(
     collectionSlug: string,
     limit?: number,
     next?: string,
     includePrivateListings?: boolean,
+    maker?: string,
   ): Promise<GetListingsResponse> {
     const response = await this.fetcher.get<GetListingsResponse>(
       getAllListingsAPIPath(collectionSlug),
@@ -50,6 +52,7 @@ export class ListingsAPI {
         ...(includePrivateListings !== undefined && {
           includePrivateListings,
         }),
+        ...(maker !== undefined && { maker }),
       },
     )
     return response

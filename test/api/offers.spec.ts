@@ -118,6 +118,17 @@ describe("API: OffersAPI", () => {
       })
     })
 
+    test("filters all offers by maker", async () => {
+      mockGet.mockResolvedValue({ offers: [], next: undefined })
+
+      await offersAPI.getAllOffers("test-collection", 10, undefined, "0xabc")
+
+      expect(mockGet.mock.calls[0][1]).toEqual({
+        limit: 10,
+        maker: "0xabc",
+      })
+    })
+
     test("handles empty offers array", async () => {
       const mockResponse: GetOffersResponse = {
         offers: [],
@@ -309,6 +320,56 @@ describe("API: OffersAPI", () => {
       )
 
       expect(result.offers).toEqual([])
+    })
+
+    test("sends a numeric range with mode", async () => {
+      mockGet.mockResolvedValue({ offers: [], next: undefined })
+
+      await offersAPI.getTraitOffers(
+        "test-collection",
+        "Level",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { mode: "NUMERIC", minValue: 1, maxValue: 5 },
+      )
+
+      expect(mockGet.mock.calls[0][1]).toEqual({
+        type: "Level",
+        mode: "NUMERIC",
+        minValue: 1,
+        maxValue: 5,
+      })
+    })
+
+    test("JSON-encodes multi-trait filters", async () => {
+      mockGet.mockResolvedValue({ offers: [], next: undefined })
+
+      await offersAPI.getTraitOffers(
+        "test-collection",
+        undefined,
+        undefined,
+        20,
+        undefined,
+        undefined,
+        undefined,
+        {
+          mode: "MULTI",
+          traits: [
+            { traitType: "Background", value: "Red" },
+            { traitType: "Eyes", value: "Laser" },
+          ],
+        },
+      )
+
+      expect(mockGet.mock.calls[0][1]).toEqual({
+        limit: 20,
+        mode: "MULTI",
+        traits:
+          '[{"traitType":"Background","value":"Red"},{"traitType":"Eyes","value":"Laser"}]',
+      })
     })
 
     test("throws error on API failure", async () => {

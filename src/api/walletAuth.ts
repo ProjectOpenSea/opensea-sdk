@@ -591,6 +591,19 @@ export class WalletAuthAPI {
   }
 
   /**
+   * Issue a single-use nonce for linking a wallet to the authenticated account,
+   * with the statement to sign. Build the SIWX message with both verbatim and
+   * submit it to `linkWallet` within 10 minutes; the nonce only works for this
+   * account.
+   */
+  getWalletLinkNonce() {
+    return this.fetcher.request<OperationResponse<"get_wallet_link_nonce">>(
+      "POST",
+      "/api/v2/accounts/wallets/siwx/nonce",
+    )
+  }
+
+  /**
    * `LinkWalletSiwxRequest` is camelCase on the wire. `chainArch` is required, so
    * snake-casing it made every call fail validation, and the nested SIWX `message`
    * keeps camelCase keys the server uses to rebuild the message the wallet signed.

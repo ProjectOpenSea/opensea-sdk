@@ -1,5 +1,15 @@
 # @opensea/sdk
 
+## 12.15.0
+
+### Minor Changes
+
+- d3b4487: API parity: expose every query param the spec defines on existing operations.
+
+  - SDK: `getAllOffers` and `getAllListings` take `maker`; `getNFTsByCollection` takes `hasAgentBinding`; `getTraitOffers` accepts `undefined` `type`/`value` plus a `TraitOffersFilters` argument (`mode`, `minValue`, `maxValue`, multi-trait `traits`). The deprecated `OpenSeaAPI` forwarders match.
+  - CLI: `tokens trending`/`top` add `--sort-by`/`--sort-direction`; `listings all`/`best`/`best-for-nft` add `--include-private-listings`; `nfts list-by-collection` adds `--has-agent-binding`; `collections top-pfp` adds `--categories`, `--min-floor-price-usd`, `--max-floor-price-usd`; `offers traits` makes `--type`/`--value` optional and adds `--mode`, `--float-value`, `--int-value`, `--min-value`, `--max-value`, `--traits`; `tools search` adds `--source`, `--collection`, `--include-details`; `tools list` adds `--source`. The programmatic `OpenSeaCLI` methods take the same options.
+- c8d196b: Add `walletAuth.getWalletLinkNonce()` for `POST /api/v2/accounts/wallets/siwx/nonce`, and type `requestWalletLinkNonce`'s result from `@opensea/api-types` (`get_wallet_link_nonce`). Requires `@opensea/api-types` 0.17.2.
+
 ## 12.14.0
 
 ### Minor Changes

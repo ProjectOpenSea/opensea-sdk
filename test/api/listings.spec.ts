@@ -120,6 +120,25 @@ describe("API: ListingsAPI", () => {
       })
     })
 
+    test("filters all listings by maker", async () => {
+      mockGet.mockResolvedValue({ listings: [], next: undefined })
+
+      await listingsAPI.getAllListings(
+        "test-collection",
+        undefined,
+        undefined,
+        true,
+        "0xabc",
+      )
+
+      expect(mockGet.mock.calls[0][1]).toEqual({
+        limit: undefined,
+        next: undefined,
+        includePrivateListings: true,
+        maker: "0xabc",
+      })
+    })
+
     test("handles collection slug with special characters", async () => {
       const mockResponse: GetListingsResponse = {
         listings: [],

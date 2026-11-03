@@ -16,15 +16,17 @@ import {
   getTraitOffersPath,
 } from "./apiPaths"
 import type { Fetcher } from "./fetcher"
-import type {
-  BuildOfferResponse,
-  CollectionOffer,
-  CreateOfferActionsRequest,
-  CreateOfferActionsResponse,
-  CreateOfferFulfillmentActionsRequest,
-  CreateOfferFulfillmentActionsResponse,
-  GetBestOfferResponse,
-  GetOffersResponse,
+import {
+  type BuildOfferResponse,
+  type CollectionOffer,
+  type CreateOfferActionsRequest,
+  type CreateOfferActionsResponse,
+  type CreateOfferFulfillmentActionsRequest,
+  type CreateOfferFulfillmentActionsResponse,
+  encodeTraitsParam,
+  type GetBestOfferResponse,
+  type GetOffersResponse,
+  type TraitOffersFilters,
 } from "./types"
 
 /**
@@ -92,37 +94,55 @@ export class OffersAPI {
 
   /**
    * Gets all offers for a given collection.
+   * @param maker Only return offers made by this wallet address.
    */
   async getAllOffers(
     collectionSlug: string,
     limit?: number,
     next?: string,
+    maker?: string,
   ): Promise<GetOffersResponse> {
     const response = await this.fetcher.get<GetOffersResponse>(
       getAllOffersAPIPath(collectionSlug),
       {
         limit,
         next,
+        maker,
       },
     )
     return response
   }
 
   /**
-   * Gets trait offers for a given collection.
+   * Gets trait offers for a given collection. Pass `type` and `value` for a single string trait,
+   * `type` with `filters.minValue`/`filters.maxValue` for a numeric range, or `filters.traits` for
+   * a multi-trait query (leave `type` and `value` undefined). The API infers `filters.mode` from
+   * the other params when it is omitted.
    */
   async getTraitOffers(
     collectionSlug: string,
-    type: string,
-    value: string,
+    type: string | undefined,
+    value: string | undefined,
     limit?: number,
     next?: string,
     floatValue?: number,
     intValue?: number,
+    filters?: TraitOffersFilters,
   ): Promise<GetOffersResponse> {
     return this.fetcher.get<GetOffersResponse>(
       getTraitOffersPath(collectionSlug),
-      { type, value, limit, next, floatValue, intValue },
+      {
+        type,
+        value,
+        limit,
+        next,
+        floatValue,
+        intValue,
+        mode: filters?.mode,
+        minValue: filters?.minValue,
+        maxValue: filters?.maxValue,
+        traits: encodeTraitsParam(filters?.traits),
+      },
     )
   }
 
