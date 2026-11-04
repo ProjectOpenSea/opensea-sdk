@@ -92,9 +92,9 @@ export async function executeWithRateLimit<T>(
 
       // Check if this is a rate limit error by status code (robust) or retry-after header
       const isRateLimitError =
-        rateLimitError.statusCode === RATE_LIMIT_STATUS_CODE ||
-        rateLimitError.statusCode === CUSTOM_RATE_LIMIT_STATUS_CODE ||
-        rateLimitError.retryAfter !== undefined
+        rateLimitError?.statusCode === RATE_LIMIT_STATUS_CODE ||
+        rateLimitError?.statusCode === CUSTOM_RATE_LIMIT_STATUS_CODE ||
+        rateLimitError?.retryAfter !== undefined
 
       if (!isRateLimitError || attempt === maxRetries) {
         // Not a rate limit error or out of retries, throw the error

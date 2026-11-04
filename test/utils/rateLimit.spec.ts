@@ -126,6 +126,18 @@ describe("Utils: rateLimit", () => {
       }
     })
 
+    test.each([
+      null,
+      undefined,
+    ])("preserves a %s rejection without retrying", async reason => {
+      const operation = vi.fn().mockRejectedValue(reason)
+
+      await expect(executeWithRateLimit(operation)).rejects.toBe(reason)
+
+      expect(operation).toHaveBeenCalledTimes(1)
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
     test("handles 599 custom rate limit code", async () => {
       const rateLimitError = new Error(
         "599 Rate Limit",
@@ -187,6 +199,24 @@ describe("Utils: rateLimit", () => {
   })
 
   describe("executeSequentialWithRateLimit", () => {
+    test.each([
+      null,
+      undefined,
+    ])("stops at a %s rejection without replacing it", async reason => {
+      const first = vi.fn().mockResolvedValue("first")
+      const failing = vi.fn().mockRejectedValue(reason)
+      const next = vi.fn().mockResolvedValue("next")
+
+      await expect(
+        executeSequentialWithRateLimit([first, failing, next]),
+      ).rejects.toBe(reason)
+
+      expect(first).toHaveBeenCalledTimes(1)
+      expect(failing).toHaveBeenCalledTimes(1)
+      expect(next).not.toHaveBeenCalled()
+      expect(vi.getTimerCount()).toBe(0)
+    })
+
     test("executes operations sequentially", async () => {
       const operations = [
         vi.fn().mockResolvedValue("result1"),
