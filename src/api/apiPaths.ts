@@ -502,3 +502,11 @@ export const getToolActivityPath = (
 export const getToolUsagePath = () => {
   return `${API_V2_PREFIX}/tools/usage`
 }
+
+export const getSignalsPath = () => {
+  return `${API_V2_PREFIX}/signals`
+}
+
+export const getSignalPath = (signalId: string) => {
+  return `${API_V2_PREFIX}/signals/${segment(signalId)}`
+}

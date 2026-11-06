@@ -152,6 +152,31 @@ export class WalletAuthAPI {
   }
 
   /**
+   * Create a signal as the token's account. Needs the `write:posts` scope. Pick the subject as
+   * `listSignals` does; `authorAddress` defaults to the wallet the token signed in with. Not
+   * idempotent: a retry after an unknown outcome can post twice once the per-subject cooldown,
+   * which returns 422, has passed.
+   */
+  createSignal(body: WalletAuthRequest<"create_signal">) {
+    return this.fetcher.request<OperationResponse<"create_signal">>(
+      "POST",
+      "/api/v2/signals",
+      body,
+    )
+  }
+
+  /**
+   * Delete a signal the token's account owns. Needs the `write:posts` scope. A signal that is
+   * missing, already deleted or owned by another account returns 404.
+   */
+  async deleteSignal(signalId: string): Promise<void> {
+    await this.fetcher.request<void>(
+      "DELETE",
+      `/api/v2/signals/${segment(signalId)}`,
+    )
+  }
+
+  /**
    * `CancelRequest` carries `offererSignature`, which is camelCase on the wire.
    * It is optional, so snake-casing it didn't fail the request — it just dropped
    * the signature, turning a signed cancel into an unsigned one. Sent verbatim.
@@ -258,22 +283,6 @@ export class WalletAuthAPI {
   }
 
   /**
-   * @deprecated Use `saveDropItemMediaBatch`, which saves the same items by
-   * `uploadBatchId` and filename. This save sends every media token back and
-   * the API checks each file separately, so it slows down with drop size.
-   */
-  saveDropItemMedia(
-    slug: string,
-    body: WalletAuthRequest<"save_drop_item_media">,
-  ) {
-    return this.fetcher.request<OperationResponse<"save_drop_item_media">>(
-      "POST",
-      `/api/v2/drops/${segment(slug)}/items/media/save`,
-      body,
-    )
-  }
-
-  /**
    * Save the drop's items from files uploaded with one `uploadBatchId` through
    * `createDropItemMediaUpload`, naming them by filename (up to 15,000). Each
    * save replaces the drop's items. A manifest from
@@ -320,8 +329,7 @@ export class WalletAuthAPI {
    * `UploadContext.fields` is an opaque signed multipart field map that the
    * caller must submit unchanged, so the response is not camelized. Unlike the
    * other upload contexts, the returned token is not passed to a later call:
-   * the next `saveDropItemMediaBatch` (or deprecated `saveDropItemMedia`)
-   * reads the stored manifest.
+   * the next `saveDropItemMediaBatch` reads the stored manifest.
    */
   createDropCollectionManifestUpload(slug: string) {
     return this.fetcher.request<

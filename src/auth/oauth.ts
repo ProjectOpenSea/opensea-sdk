@@ -84,16 +84,18 @@ export class OpenSeaOAuth {
    */
   async getDiscovery(): Promise<OAuthDiscoveryDocument> {
     if (this.discovery) return this.discovery
-    const response = await this.fetchWithTimeout(
+    const discovery = await this.fetchWithTimeout(
       `${this.issuer}/.well-known/openid-configuration`,
       { headers: { Accept: "application/json" } },
+      async response => {
+        if (!response.ok) {
+          throw new Error(
+            `OAuth discovery failed (${response.status}): ${response.statusText}`,
+          )
+        }
+        return (await response.json()) as OAuthDiscoveryDocument
+      },
     )
-    if (!response.ok) {
-      throw new Error(
-        `OAuth discovery failed (${response.status}): ${response.statusText}`,
-      )
-    }
-    const discovery = (await response.json()) as OAuthDiscoveryDocument
     const advertisedIssuer = discovery.issuer?.replace(/\/+$/, "")
     if (advertisedIssuer !== this.issuer) {
       throw new Error(
@@ -167,19 +169,21 @@ export class OpenSeaOAuth {
       throw new Error("Authorization server does not support revocation")
     }
     assertSecureUrl(discovery.revocation_endpoint, "revocation_endpoint")
-    const response = await this.fetchWithTimeout(
+    await this.fetchWithTimeout(
       discovery.revocation_endpoint,
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ token, client_id: this.clientId }),
       },
+      async response => {
+        if (!response.ok) {
+          throw new Error(
+            `Token revocation failed (${response.status}): ${response.statusText}`,
+          )
+        }
+      },
     )
-    if (!response.ok) {
-      throw new Error(
-        `Token revocation failed (${response.status}): ${response.statusText}`,
-      )
-    }
   }
 
   /**
@@ -199,7 +203,7 @@ export class OpenSeaOAuth {
       discovery.device_authorization_endpoint,
       "device_authorization_endpoint",
     )
-    const response = await this.fetchWithTimeout(
+    return this.fetchWithTimeout(
       discovery.device_authorization_endpoint,
       {
         method: "POST",
@@ -209,13 +213,15 @@ export class OpenSeaOAuth {
           scope: buildScopeParam(options?.scopes),
         }),
       },
+      async response => {
+        if (!response.ok) {
+          throw new Error(
+            `Device authorization failed (${response.status}): ${response.statusText}`,
+          )
+        }
+        return (await response.json()) as DeviceAuthorizationResponse
+      },
     )
-    if (!response.ok) {
-      throw new Error(
-        `Device authorization failed (${response.status}): ${response.statusText}`,
-      )
-    }
-    return (await response.json()) as DeviceAuthorizationResponse
   }
 
   /**
@@ -234,26 +240,40 @@ export class OpenSeaOAuth {
     // authorization quickly, so waiting a full interval before the first
     // poll only adds latency.
     while (Date.now() < deadline) {
-      const response = await this.fetchWithTimeout(discovery.token_endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: DEVICE_GRANT_TYPE,
-          device_code: device.device_code,
-          client_id: this.clientId,
-        }),
-      })
-      if (response.ok) {
-        return toOAuthToken((await response.json()) as OAuthTokenResponse)
+      const poll = await this.fetchWithTimeout(
+        discovery.token_endpoint,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: DEVICE_GRANT_TYPE,
+            device_code: device.device_code,
+            client_id: this.clientId,
+          }),
+        },
+        async (
+          response,
+        ): Promise<
+          | { token: OAuthTokenResponse }
+          | { error: string | undefined; status: number }
+        > => {
+          if (response.ok) {
+            return { token: (await response.json()) as OAuthTokenResponse }
+          }
+          const body = (await response.json().catch(() => ({}))) as {
+            error?: string
+          }
+          return { error: body.error, status: response.status }
+        },
+      )
+      if ("token" in poll) {
+        return toOAuthToken(poll.token)
       }
-      const body = (await response.json().catch(() => ({}))) as {
-        error?: string
-      }
-      if (body.error === "slow_down") {
+      if (poll.error === "slow_down") {
         intervalMs += 5000
-      } else if (body.error !== "authorization_pending") {
+      } else if (poll.error !== "authorization_pending") {
         throw new Error(
-          `Device authorization failed: ${body.error ?? response.status}`,
+          `Device authorization failed: ${poll.error ?? poll.status}`,
         )
       }
       await sleep(intervalMs)
@@ -265,35 +285,48 @@ export class OpenSeaOAuth {
     tokenEndpoint: string,
     params: Record<string, string>,
   ): Promise<OAuthTokenResponse> {
-    const response = await this.fetchWithTimeout(tokenEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(params),
-    })
-    if (!response.ok) {
-      const body = await response.text().catch(() => "")
-      throw new Error(
-        `Token request failed (${response.status}): ${body || response.statusText}`,
-      )
-    }
-    return (await response.json()) as OAuthTokenResponse
+    return this.fetchWithTimeout(
+      tokenEndpoint,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(params),
+      },
+      async response => {
+        if (!response.ok) {
+          const body = await response.text().catch(() => "")
+          throw new Error(
+            `Token request failed (${response.status}): ${body || response.statusText}`,
+          )
+        }
+        return (await response.json()) as OAuthTokenResponse
+      },
+    )
   }
 
   /**
    * `fetch` wrapper that aborts the request after `this.timeoutMs`, so a hung
-   * authorization server can't stall the flow indefinitely.
+   * authorization server can't stall the flow indefinitely. The deadline
+   * covers `read` as well, since a server can send headers and then stall the
+   * body.
    */
-  private async fetchWithTimeout(
+  private async fetchWithTimeout<T>(
     input: string,
     init: RequestInit,
-  ): Promise<Response> {
+    read: (response: Response) => Promise<T>,
+  ): Promise<T> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), this.timeoutMs)
     try {
-      return await fetchWith(this.fetchImpl, input, {
+      const response = await fetchWith(this.fetchImpl, input, {
         ...init,
         signal: controller.signal,
       })
+      const result = await read(response)
+      // A read that swallows its own failure, like `.text().catch(() => "")`,
+      // can still resolve after the abort.
+      if (controller.signal.aborted) throw new Error("aborted")
+      return result
     } catch (error) {
       // Detect our own timeout via the controller rather than the error type:
       // an aborted fetch rejects with a `DOMException` in browsers (not always

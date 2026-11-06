@@ -55,6 +55,8 @@ import type {
   OperationQueryParams,
   paths,
   RegisteredToolResponse,
+  SignalResponse,
+  SignalsResponse,
   StandardizedNft,
   StandardizedNftFacetsResponse,
   StandardizedNftListResponse,
@@ -1798,3 +1800,23 @@ export type GetToolResponse = Omit<
  * @category API Response Types
  */
 export type GetToolActivityResponse = Camelize<ToolActivityPaginatedResponse>
+
+/**
+ * Query args for `GET /api/v2/signals`. Select exactly one subject: `chain` and `contract` for a
+ * currency, plus `tokenId` for an item, or `collection` alone.
+ * @category API Query Args
+ */
+export type ListSignalsArgs = Camelize<OperationQueryParams<"list_signals">>
+
+/**
+ * A public OpenSea signal.
+ * @category API Response Types
+ */
+export type GetSignalResponse = Camelize<SignalResponse>
+
+/**
+ * Response from `GET /api/v2/signals`. `next` is the cursor for the following page, or null on
+ * the last one.
+ * @category API Response Types
+ */
+export type ListSignalsResponse = Camelize<SignalsResponse>

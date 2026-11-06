@@ -325,12 +325,12 @@ The SDK provides gas-efficient methods for transferring multiple assets in a sin
 
 #### Batch Approving Assets
 
-Before transferring assets, you need to approve them for transfer to the OpenSea conduit. The `batchApproveAssets()` method intelligently batches multiple approval transactions:
+Before transferring assets, you need to approve them for transfer to the OpenSea conduit. The `batchApproveAssets()` method checks each asset and approves only the contracts that need it:
 
 ```typescript
 import { TokenStandard } from "@opensea/sdk";
 
-// Approve multiple assets in a single transaction
+// Approve every contract that is not yet approved for the conduit
 const txHash = await openseaSDK.batchApproveAssets({
   assets: [
     {
@@ -353,13 +353,9 @@ const txHash = await openseaSDK.batchApproveAssets({
 });
 ```
 
-The method uses intelligent batching:
+It sends one approval transaction from `fromAddress` per token contract that needs one, and skips contracts that are already approved. Assets that share a contract share one approval. The method returns the hash of the last approval, or `undefined` when nothing needed approving.
 
-- **0 approvals needed**: Returns `undefined` (no transaction)
-- **1 approval needed**: Sends a single direct approval
-- **2+ approvals needed**: Uses Multicall3 to batch all approvals in one transaction
-
-This is significantly more gas-efficient than approving each asset separately.
+Approvals cannot be combined into one transaction from a regular wallet: a token grants the approval to whoever calls it, so batching them through a contract such as Multicall3 would approve that contract instead of you.
 
 #### Bulk Transfer
 

@@ -33,6 +33,7 @@ import { NFTsAPI } from "./nfts"
 import { OffersAPI } from "./offers"
 import { OrdersAPI } from "./orders"
 import { SearchAPI } from "./search"
+import { SignalsAPI } from "./signals"
 import { TokensAPI } from "./tokens"
 import { ToolsAPI } from "./tools"
 import { TransactionsAPI } from "./transactions"
@@ -214,6 +215,8 @@ export class OpenSeaAPI {
   public readonly drops: DropsAPI
   public readonly transactions: TransactionsAPI
   public readonly assets: AssetsAPI
+  /** Public OpenSea signals. Creating and deleting them is on `walletAuth`. */
+  public readonly signals: SignalsAPI
   /** Tool registry endpoints. Beta: they may change without notice. */
   public readonly tools: ToolsAPI
   /** Wallet-authenticated scoped REST helpers. */
@@ -265,6 +268,7 @@ export class OpenSeaAPI {
     this.drops = new DropsAPI(fetcher)
     this.transactions = new TransactionsAPI(fetcher)
     this.assets = new AssetsAPI(fetcher)
+    this.signals = new SignalsAPI(fetcher)
     this.tools = new ToolsAPI(fetcher)
     this.walletAuth = new WalletAuthAPI(fetcher)
   }

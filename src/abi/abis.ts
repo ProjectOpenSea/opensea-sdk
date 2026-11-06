@@ -180,35 +180,6 @@ export const TRANSFER_HELPER_ABI = [
   },
 ] as const
 
-export const MULTICALL3_ABI = [
-  {
-    name: "aggregate3",
-    type: "function",
-    stateMutability: "payable",
-    inputs: [
-      {
-        name: "calls",
-        type: "tuple[]",
-        components: [
-          { name: "target", type: "address" },
-          { name: "allowFailure", type: "bool" },
-          { name: "callData", type: "bytes" },
-        ],
-      },
-    ],
-    outputs: [
-      {
-        name: "returnData",
-        type: "tuple[]",
-        components: [
-          { name: "success", type: "bool" },
-          { name: "returnData", type: "bytes" },
-        ],
-      },
-    ],
-  },
-] as const
-
 export const SET_APPROVAL_FOR_ALL_ABI = [
   {
     name: "setApprovalForAll",

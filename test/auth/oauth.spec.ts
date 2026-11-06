@@ -119,6 +119,96 @@ describe("OpenSeaOAuth", () => {
     await expect(oauth.getDiscovery()).rejects.toThrow(/timed out/)
   })
 
+  describe("a server that sends headers and then stalls the body", () => {
+    const TIMEOUT_MS = 100
+
+    function stalledBody(signal: AbortSignal | null | undefined, ok: boolean) {
+      const stall = () =>
+        new Promise((_resolve, reject) => {
+          signal?.addEventListener("abort", () => {
+            reject(Object.assign(new Error("aborted"), { name: "AbortError" }))
+          })
+        })
+      return {
+        ok,
+        status: ok ? 200 : 500,
+        statusText: "",
+        json: stall,
+        text: stall,
+      } as unknown as Response
+    }
+
+    function stallNextResponse(ok: boolean) {
+      fetchMock.mockImplementationOnce((_url: string, init: RequestInit) =>
+        Promise.resolve(stalledBody(init.signal, ok)),
+      )
+    }
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    test.each([
+      {
+        read: "discovery JSON",
+        run: (oauth: OpenSeaOAuth) => {
+          stallNextResponse(true)
+          return oauth.getDiscovery()
+        },
+      },
+      {
+        read: "token JSON",
+        run: (oauth: OpenSeaOAuth) => {
+          mockDiscovery(fetchMock)
+          stallNextResponse(true)
+          return oauth.refresh("refresh-token")
+        },
+      },
+      {
+        read: "token error text",
+        run: (oauth: OpenSeaOAuth) => {
+          mockDiscovery(fetchMock)
+          stallNextResponse(false)
+          return oauth.refresh("refresh-token")
+        },
+      },
+      {
+        read: "device poll error JSON",
+        run: (oauth: OpenSeaOAuth) => {
+          mockDiscovery(fetchMock)
+          stallNextResponse(false)
+          return oauth.pollDeviceToken({
+            device_code: "device-code",
+            user_code: "USER-CODE",
+            verification_uri: `${ISSUER}/device`,
+            expires_in: 600,
+            interval: 5,
+          })
+        },
+      },
+    ])("times out a stalled $read read", async ({ run }) => {
+      vi.useFakeTimers()
+      const oauth = new OpenSeaOAuth({
+        clientId: CLIENT_ID,
+        issuer: ISSUER,
+        timeoutMs: TIMEOUT_MS,
+      })
+      let outcome = "still pending"
+      run(oauth).then(
+        () => {
+          outcome = "resolved"
+        },
+        (error: Error) => {
+          outcome = error.message
+        },
+      )
+
+      await vi.advanceTimersByTimeAsync(TIMEOUT_MS)
+
+      expect(outcome).toMatch(/timed out after 100ms/)
+    })
+  })
+
   test("createAuthorizationRequest builds a PKCE authorization URL", async () => {
     mockDiscovery(fetchMock)
     const oauth = new OpenSeaOAuth({ clientId: CLIENT_ID, issuer: ISSUER })

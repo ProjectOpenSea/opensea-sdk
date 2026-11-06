@@ -95,11 +95,6 @@ describe("WalletAuthAPI", () => {
       ],
       [
         "POST",
-        "/api/v2/drops/drop/items/media/save",
-        () => api.saveDropItemMedia("drop", body),
-      ],
-      [
-        "POST",
         "/api/v2/drops/my%20drop/items/media/save-batch",
         () => api.saveDropItemMediaBatch("my drop", body),
       ],

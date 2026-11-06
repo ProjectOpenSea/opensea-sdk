@@ -33,6 +33,7 @@ export const NAMESPACED: Record<string, string> = {
   NFTsAPI: "nfts",
   OffersAPI: "offers",
   OrdersAPI: "orders",
+  SignalsAPI: "signals",
   TokensAPI: "tokens",
   ToolsAPI: "tools",
   TransactionsAPI: "transactions",
@@ -52,6 +53,7 @@ export const NOT_NAMESPACED: Record<string, string> = {
  * twelve just moved to, not an exception to it.
  */
 export const NO_FLAT_SURFACE: Record<string, string> = {
+  SignalsAPI: "added after the flat surface was frozen, so namespace-only",
   ToolsAPI: "added after the flat surface was frozen, so namespace-only",
   WalletAuthAPI: "always namespace-only, never had flat forwarders",
 }

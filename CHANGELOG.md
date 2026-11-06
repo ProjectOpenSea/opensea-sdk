@@ -1,5 +1,39 @@
 # @opensea/sdk
 
+## 13.0.0
+
+### Major Changes
+
+- 0335395: **Breaking:** removes the drop item media save by media token.
+
+  SDK: `WalletAuthAPI.saveDropItemMedia` is gone. CLI: `opensea drops save-item-media` is gone.
+
+  The endpoint they called, `POST /api/v2/drops/{slug}/items/media/save`, no longer exists. os2-core deprecated it in ProjectOpenSea/os2-core#60956 and removed it in ProjectOpenSea/os2-core#67914. Its last successful save was on 2026-10-02. Keeping these would mean shipping calls that 404.
+
+  Migration: upload the files under one upload batch id and save them by filename. In the SDK, pass `uploadBatchId` to `createDropItemMediaUpload`, then call `saveDropItemMediaBatch(slug, { upload_batch_id, filenames })`. In the CLI, `opensea drops upload-items <slug> <dir>` does both steps for a folder, and `save-item-media-batch` saves a batch that is already uploaded.
+
+### Minor Changes
+
+- 09ca01f: Add OpenSea signals.
+
+  SDK: `api.signals.getSignal(signalId)` and `api.signals.listSignals(args)` read public signals with an API key. `api.walletAuth.createSignal(body)` and `api.walletAuth.deleteSignal(signalId)` post and delete them with a wallet token holding the `write:posts` scope. New types: `ListSignalsArgs`, `GetSignalResponse` and `ListSignalsResponse`.
+
+  CLI: `opensea signals get`, `list`, `create` and `delete`, and `OpenSeaCLI.signals` with `get`, `list`, `create` and `delete`. Sign in with `opensea auth login --private-key --scopes write:posts` to post or delete; `write:posts` is a preview scope, so browser OAuth login does not offer it yet.
+
+  `list` subjects are `chain` and `contract` for a currency, plus `tokenId` (`--token-id`) for an NFT, or `collection` alone. A page can be empty while `next` is set, so keep paging until `next` is null. Creating a signal is not idempotent.
+
+### Patch Changes
+
+- f07f3d6: `batchApproveAssets` sends each approval from `fromAddress` instead of batching two or more through Multicall3. A token grants an approval to `msg.sender`, so the batched transaction approved Multicall3 and left the owner's assets unapproved. Each contract that needs approval is now its own transaction, and the method returns the last hash. Reported in ProjectOpenSea/opensea-sdk#2033.
+
+  `OpenSeaOAuth` keeps its `timeoutMs` deadline running while it reads a response body. Before, the timer stopped once headers arrived, so a server that sent headers and then stalled the body left discovery, token, device authorization and device polling waiting forever. Reported in ProjectOpenSea/opensea-sdk#2032.
+
+  The rate-limit retry wrapper rethrows a `null` or `undefined` rejection unchanged instead of replacing it with a `TypeError`. From ProjectOpenSea/opensea-sdk#2034.
+
+- Updated dependencies [c0ee307]
+- Updated dependencies [355bb4d]
+  - @opensea/api-types@0.18.0
+
 ## 12.15.0
 
 ### Minor Changes
@@ -8,6 +42,7 @@
 
   - SDK: `getAllOffers` and `getAllListings` take `maker`; `getNFTsByCollection` takes `hasAgentBinding`; `getTraitOffers` accepts `undefined` `type`/`value` plus a `TraitOffersFilters` argument (`mode`, `minValue`, `maxValue`, multi-trait `traits`). The deprecated `OpenSeaAPI` forwarders match.
   - CLI: `tokens trending`/`top` add `--sort-by`/`--sort-direction`; `listings all`/`best`/`best-for-nft` add `--include-private-listings`; `nfts list-by-collection` adds `--has-agent-binding`; `collections top-pfp` adds `--categories`, `--min-floor-price-usd`, `--max-floor-price-usd`; `offers traits` makes `--type`/`--value` optional and adds `--mode`, `--float-value`, `--int-value`, `--min-value`, `--max-value`, `--traits`; `tools search` adds `--source`, `--collection`, `--include-details`; `tools list` adds `--source`. The programmatic `OpenSeaCLI` methods take the same options.
+
 - c8d196b: Add `walletAuth.getWalletLinkNonce()` for `POST /api/v2/accounts/wallets/siwx/nonce`, and type `requestWalletLinkNonce`'s result from `@opensea/api-types` (`get_wallet_link_nonce`). Requires `@opensea/api-types` 0.17.2.
 
 ## 12.14.0

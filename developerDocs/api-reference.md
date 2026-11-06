@@ -37,7 +37,7 @@ const best = await sdk.api.listings.getBestListing("boredapeyachtclub", "1")
 ```
 
 The namespaces are `accounts`, `assets`, `chains`, `collections`, `drops`, `events`, `listings`,
-`nfts`, `offers`, `orders`, `tokens`, `tools` (beta), `transactions` and `walletAuth`. Search is the exception and
+`nfts`, `offers`, `orders`, `signals`, `tokens`, `tools` (beta), `transactions` and `walletAuth`. Search is the exception and
 stays flat, as `sdk.api.search(args)`, because `SearchAPI`'s only method is also called `search`.
 
 The flat equivalents (`sdk.api.getCollection(...)`) still work and are deprecated for removal in the
@@ -1574,6 +1574,67 @@ for (const [i, file] of files.entries()) {
   await uploadToContext(selectUploadContext(contexts, i), file, { filename: file.name });
 }
 ```
+
+---
+
+## Signal Endpoints
+
+Signals are public posts on OpenSea about one subject: a currency, an NFT or a collection. Reading them needs only an API key, so `getSignal` and `listSignals` live on `openseaSDK.api.signals`. Creating and deleting a signal needs an `authToken` with the `write:posts` scope, so those live on `api.walletAuth` as `createSignal` and `deleteSignal`. Signals cannot be edited.
+
+A signal ID is an opaque `sig_v1_...` string. Pass it back unchanged.
+
+### Get Signal
+
+```typescript
+const signal = await openseaSDK.api.signals.getSignal("sig_v1_...");
+console.log(signal.text, signal.authorAddress, signal.subject.type);
+```
+
+**Returns:** `GetSignalResponse` with `signalId`, `authorAddress`, `text`, `subject`, `subjectPriceUsd` (the USD price when the signal was posted) and its timestamps. Removed, private and pending signals return 404.
+
+---
+
+### List Signals
+
+```typescript
+const { signals, next } = await openseaSDK.api.signals.listSignals({
+  chain: "base",
+  contract: "0x0000000000000000000000000000000000000000",
+  tokenId: "42",
+  limit: 50,
+});
+```
+
+**Parameters:** `ListSignalsArgs` with exactly one subject: `chain` and `contract` for a currency, plus `tokenId` for an NFT (a decimal on EVM chains, the mint address on Solana), or `collection` (a slug) alone. Also `limit` (1-100) and `cursor`.
+
+**Returns:** `ListSignalsResponse` with `signals`, newest first, and a `next` cursor. A page can be empty while `next` is set, so keep passing `next` back as `cursor` until it is null:
+
+```typescript
+let cursor: string | undefined;
+do {
+  const page = await openseaSDK.api.signals.listSignals({
+    collection: "doodles-official",
+    cursor,
+  });
+  for (const signal of page.signals) console.log(signal.text);
+  cursor = page.next ?? undefined;
+} while (cursor);
+```
+
+---
+
+### Create and Delete a Signal
+
+```typescript
+const { signalId } = await openseaSDK.api.walletAuth.createSignal({
+  text: "Floor looks thin",
+  collection: "doodles-official",
+});
+
+await openseaSDK.api.walletAuth.deleteSignal(signalId);
+```
+
+`createSignal` takes `text` (up to 3000 characters), the same subject fields as `listSignals`, and an optional `authorAddress`, which defaults to the wallet the token signed in with. It is not idempotent: a retry after an unknown outcome can post twice once the per-subject cooldown has passed, and a post inside the cooldown returns 422. `deleteSignal` resolves with no value; a signal that is missing, already deleted or owned by another account returns 404.
 
 ---
 
