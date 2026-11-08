@@ -1,5 +1,13 @@
 # @opensea/sdk
 
+## Unreleased
+
+### Patch Changes
+
+- Align `Camelize<T>` with the runtime key conversion for repeated, trailing,
+  and otherwise unmatched underscores. For example, `foo__bar` is typed as
+  `foo_Bar`, not `fooBar`. Runtime output is unchanged.
+
 ## 13.0.0
 
 ### Major Changes

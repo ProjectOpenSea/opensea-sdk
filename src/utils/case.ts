@@ -130,11 +130,16 @@ export type Snakeize<T> = T extends Date
 
 /**
  * Maps a snake_case string literal to camelCase at the type level.
- * `"is_nsfw"` → `"isNsfw"`.
+ * `"is_nsfw"` → `"isNsfw"`. Like the runtime regex, only an underscore
+ * followed by an ASCII lowercase letter or digit is consumed. Other
+ * underscores are preserved: `"foo__bar"` → `"foo_Bar"`.
  */
-type SnakeToCamel<S extends string> = S extends `${infer Head}_${infer Tail}`
-  ? `${Head}${Capitalize<SnakeToCamel<Tail>>}`
-  : S
+type SnakeToCamel<S extends string> =
+  S extends `${infer Head}_${infer Next}${infer Tail}`
+    ? "abcdefghijklmnopqrstuvwxyz0123456789" extends `${string}${Next}${string}`
+      ? `${Head}${Uppercase<Next>}${SnakeToCamel<Tail>}`
+      : `${Head}_${SnakeToCamel<`${Next}${Tail}`>}`
+    : S
 
 /**
  * Recursively rewrites object keys from snake_case to camelCase. Preserves

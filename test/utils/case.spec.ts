@@ -206,6 +206,34 @@ describe("Camelize<T>", () => {
     }>()
   })
 
+  test("matches the runtime for repeated and unmatched underscores", () => {
+    const result = camelizeKeysDeep({
+      foo__bar: 1,
+      trailing_: 2,
+      upper_Case: 3,
+      _leading: 4,
+      version_2_name: 5,
+      non_ascii_é: 6,
+      punctuation_$value: 7,
+      nested_values: [{ foo___bar: 8 }],
+    })
+    const expected = {
+      foo_Bar: 1,
+      trailing_: 2,
+      upper_Case: 3,
+      Leading: 4,
+      version2Name: 5,
+      nonAscii_é: 6,
+      punctuation_$value: 7,
+      nestedValues: [{ foo__Bar: 8 }],
+    }
+    expect(result).toEqual(expected)
+    expectTypeOf(result).toEqualTypeOf<typeof expected>()
+    expectTypeOf(result.foo_Bar).toEqualTypeOf<number>()
+    // @ts-expect-error the runtime retains the unmatched underscore
+    result.fooBar
+  })
+
   test("recurses through nested objects and arrays", () => {
     type In = {
       pricingCurrencies: {
