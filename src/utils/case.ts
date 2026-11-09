@@ -128,13 +128,57 @@ export type Snakeize<T> = T extends Date
 
 // ─── Type-level mapper ─────────────────────────────────────────────────────
 
+/** The characters `snakeToCamel`'s `/_([a-z0-9])/` consumes after an underscore. */
+type LowerAlphanumeric =
+  | "a"
+  | "b"
+  | "c"
+  | "d"
+  | "e"
+  | "f"
+  | "g"
+  | "h"
+  | "i"
+  | "j"
+  | "k"
+  | "l"
+  | "m"
+  | "n"
+  | "o"
+  | "p"
+  | "q"
+  | "r"
+  | "s"
+  | "t"
+  | "u"
+  | "v"
+  | "w"
+  | "x"
+  | "y"
+  | "z"
+  | "0"
+  | "1"
+  | "2"
+  | "3"
+  | "4"
+  | "5"
+  | "6"
+  | "7"
+  | "8"
+  | "9"
+
 /**
- * Maps a snake_case string literal to camelCase at the type level.
- * `"is_nsfw"` → `"isNsfw"`.
+ * Maps a snake_case string literal to camelCase at the type level, matching
+ * {@link snakeToCamel}: `"is_nsfw"` → `"isNsfw"`. Only an underscore followed
+ * by a lowercase ASCII letter or digit is consumed, so `"foo__bar"` →
+ * `"foo_Bar"` and `"trailing_"` stays as is.
  */
-type SnakeToCamel<S extends string> = S extends `${infer Head}_${infer Tail}`
-  ? `${Head}${Capitalize<SnakeToCamel<Tail>>}`
-  : S
+type SnakeToCamel<S extends string> =
+  S extends `${infer Head}_${infer Next}${infer Tail}`
+    ? Next extends LowerAlphanumeric
+      ? `${Head}${Uppercase<Next>}${SnakeToCamel<Tail>}`
+      : `${Head}_${SnakeToCamel<`${Next}${Tail}`>}`
+    : S
 
 /**
  * Recursively rewrites object keys from snake_case to camelCase. Preserves

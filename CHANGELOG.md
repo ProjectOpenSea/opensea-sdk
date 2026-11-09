@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 13.0.3
+
+### Patch Changes
+
+- 5a42c0a: `Camelize<T>` now keeps the same underscores `camelizeKeysDeep()` keeps at runtime. Only an underscore followed by a lowercase letter or digit is removed, so `{ foo__bar: 1 }` types as `{ foo_Bar: number }` instead of the nonexistent `fooBar`. No OpenSea API field is affected: none of the 733 field and parameter names in the spec camelizes differently. Contributed by @omerbek in [opensea-sdk#2036](https://github.com/ProjectOpenSea/opensea-sdk/pull/2036).
+
 ## 13.0.2
 
 ### Patch Changes

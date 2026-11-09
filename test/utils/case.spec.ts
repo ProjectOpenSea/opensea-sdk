@@ -221,4 +221,33 @@ describe("Camelize<T>", () => {
       socialMediaAccounts: Array<{ platform: string; userName: string }>
     }>()
   })
+
+  test("keeps every underscore the runtime keeps", () => {
+    const result = camelizeKeysDeep({
+      foo__bar: 1,
+      foo___bar: 2,
+      trailing_: 3,
+      upper_Case: 4,
+      _leading: 5,
+      version_2_name: 6,
+      accent_é: 7,
+      dollar_$sign: 8,
+      nested_items: [{ inner__key: 9 }],
+    })
+    const runtimeShape = {
+      foo_Bar: 1,
+      foo__Bar: 2,
+      trailing_: 3,
+      upper_Case: 4,
+      Leading: 5,
+      version2Name: 6,
+      accent_é: 7,
+      dollar_$sign: 8,
+      nestedItems: [{ inner_Key: 9 }],
+    }
+    expect(result).toEqual(runtimeShape)
+    expectTypeOf(result).toEqualTypeOf<typeof runtimeShape>()
+    // @ts-expect-error the runtime keeps the unmatched underscore, so `fooBar` does not exist
+    expect(result.fooBar).toBeUndefined()
+  })
 })
