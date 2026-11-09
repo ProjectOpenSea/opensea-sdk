@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 13.0.2
+
+### Patch Changes
+
+- f338b0b: Fix `bulkTransfer`, which reverted on every call. It now encodes Seaport's TransferHelper `bulkTransfer(TransferHelperItemsWithRecipient[], bytes32)` (selector `0x32389b71`) with one entry per recipient, instead of a flat item list the contract does not expose. ERC721 items keep `transfer()`'s semantics (no receiver check). `bulkTransfer`'s approval preflight and `batchApproveAssets` now compare each ERC20's allowance with the total across all of its entries, so two transfers of 60 against an allowance of 100 are caught before the transaction instead of reverting onchain. Reported in [opensea-sdk#2035](https://github.com/ProjectOpenSea/opensea-sdk/issues/2035) by @erkancamli.
+
 ## 13.0.1
 
 ### Patch Changes

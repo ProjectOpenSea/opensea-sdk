@@ -16,6 +16,47 @@ import {
 import { getDefaultConduit } from "../utils/utils"
 import type { SDKContext } from "./context"
 
+type TransferHelperItem = {
+  itemType: number
+  token: string
+  identifier: string
+  amount: string
+}
+
+/**
+ * Combines entries for the same ERC20 (compared case-insensitively) into one
+ * entry with the summed amount, keeping first-seen order. The conduit pulls the
+ * total, so an allowance check per entry passes two transfers of 60 against an
+ * allowance of 100 that then revert onchain.
+ */
+function mergeErc20Amounts<
+  T extends { asset: AssetWithTokenStandard; amount?: Amount },
+>(entries: T[]): T[] {
+  const merged: T[] = []
+  const erc20Index = new Map<string, number>()
+  for (const entry of entries) {
+    if (entry.asset.tokenStandard !== TokenStandard.ERC20 || !entry.amount) {
+      merged.push(entry)
+      continue
+    }
+    const key = entry.asset.tokenAddress.toLowerCase()
+    const index = erc20Index.get(key)
+    if (index === undefined) {
+      erc20Index.set(key, merged.length)
+      merged.push(entry)
+      continue
+    }
+    const existing = merged[index]
+    merged[index] = {
+      ...existing,
+      amount: (
+        BigInt(String(existing.amount)) + BigInt(String(entry.amount))
+      ).toString(),
+    }
+  }
+  return merged
+}
+
 /**
  * Asset transfer and approval operations
  */
@@ -206,15 +247,17 @@ export class AssetsManager {
       throw new Error("At least one asset must be provided")
     }
 
-    // Validate asset data and build transfer items array for TransferHelper
-    // This validation happens before any blockchain calls to ensure proper error messages
-    const transferItems: Array<{
-      itemType: number
-      token: string
-      identifier: string
-      amount: string
-      recipient: string
-    }> = []
+    // Validate asset data and group transfer items per recipient, the shape
+    // TransferHelper.bulkTransfer takes. This validation happens before any
+    // blockchain calls to ensure proper error messages.
+    const itemsByRecipient = new Map<
+      string,
+      {
+        items: TransferHelperItem[]
+        recipient: string
+        validateERC721Receiver: boolean
+      }
+    >()
 
     for (const { asset, toAddress, amount } of assets) {
       let itemType: number
@@ -258,14 +301,27 @@ export class AssetsManager {
           )
       }
 
-      transferItems.push({
+      const recipientKey = toAddress.toLowerCase()
+      let group = itemsByRecipient.get(recipientKey)
+      if (!group) {
+        // false matches transfer(), which sends ERC721s with transferFrom.
+        // true would also call onERC721Received on any recipient with code,
+        // including EIP-7702 delegated EOAs whose delegate lacks the hook.
+        group = {
+          items: [],
+          recipient: toAddress,
+          validateERC721Receiver: false,
+        }
+        itemsByRecipient.set(recipientKey, group)
+      }
+      group.items.push({
         itemType,
         token: asset.tokenAddress,
         identifier,
         amount: transferAmount,
-        recipient: toAddress,
       })
     }
+    const transferItems = [...itemsByRecipient.values()]
 
     // Check account availability after parameter validation
     await this.context.requireAccountIsAvailable(fromAddress)
@@ -275,7 +331,7 @@ export class AssetsManager {
 
     // Check approvals for all assets before attempting transfer
     const unapprovedAssets: string[] = []
-    for (const { asset, amount } of assets) {
+    for (const { asset, amount } of mergeErc20Amounts(assets)) {
       const isApproved = await this.checkAssetApproval(
         asset,
         fromAddress,
@@ -382,7 +438,7 @@ export class AssetsManager {
     const approvalsNeeded: Array<{ target: string; callData: string }> = []
     const processedContracts = new Set<string>()
 
-    for (const { asset, amount } of assets) {
+    for (const { asset, amount } of mergeErc20Amounts(assets)) {
       const isApproved = await this.checkAssetApproval(
         asset,
         fromAddress,

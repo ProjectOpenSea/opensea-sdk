@@ -167,11 +167,18 @@ export const TRANSFER_HELPER_ABI = [
         name: "items",
         type: "tuple[]",
         components: [
-          { name: "itemType", type: "uint8" },
-          { name: "token", type: "address" },
-          { name: "identifier", type: "uint256" },
-          { name: "amount", type: "uint256" },
+          {
+            name: "items",
+            type: "tuple[]",
+            components: [
+              { name: "itemType", type: "uint8" },
+              { name: "token", type: "address" },
+              { name: "identifier", type: "uint256" },
+              { name: "amount", type: "uint256" },
+            ],
+          },
           { name: "recipient", type: "address" },
+          { name: "validateERC721Receiver", type: "bool" },
         ],
       },
       { name: "conduitKey", type: "bytes32" },
