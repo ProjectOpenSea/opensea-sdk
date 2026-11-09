@@ -1,5 +1,13 @@
 # @opensea/sdk
 
+## 13.0.1
+
+### Patch Changes
+
+- dff0bee: Build with TypeScript 7.0.2. api-types, cli, tool-sdk and wallet-adapters now bundle with tsdown instead of tsup, which does not support TypeScript 7. The published entry points, exports and declared types are unchanged; bundled declarations now ship with `.d.ts.map` files. Projects scaffolded with `tool-sdk init` (cloudflare, express and vercel templates) now start on TypeScript 7.0.2.
+- Updated dependencies [dff0bee]
+  - @opensea/api-types@0.18.1
+
 ## 13.0.0
 
 ### Major Changes

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": ["dom", "esnext"],
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noImplicitReturns": true,
     "noErrorTruncation": true,
     "noImplicitThis": false,

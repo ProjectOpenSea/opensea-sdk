@@ -2,8 +2,7 @@
   "extends": "./tsconfig.node-cjs.json",
   "compilerOptions": {
     "outDir": "lib",
-    "rootDir": "./src",
-    "baseUrl": "."
+    "rootDir": "./src"
   },
   "include": ["./src/**/*"]
 }

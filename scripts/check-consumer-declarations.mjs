@@ -47,7 +47,8 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
-const tsc = require.resolve("typescript/bin/tsc")
+const tsPkgPath = require.resolve("typescript/package.json")
+const tsc = join(dirname(tsPkgPath), JSON.parse(readFileSync(tsPkgPath, "utf8")).bin.tsc)
 const nodeTypesDir = dirname(require.resolve("@types/node/package.json"))
 
 const dir = mkdtempSync(join(tmpdir(), "consumer-declarations-"))
