@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 13.0.4
+
+### Patch Changes
+
+- a0571fb: Document using a `@opensea/wallet-adapters` wallet as the SDK's signer through its ethers bridge, and test it end to end: listing, offer, fulfillment, onchain cancel and offchain cancel all run through the real SDK and seaport-js against a mocked adapter.
+
 ## 13.0.3
 
 ### Patch Changes

@@ -159,6 +159,34 @@ const publicClient = createPublicClient({ chain: mainnet, transport: http() })
 const sdk = new OpenSeaSDK({ publicClient }, { chain: Chain.Mainnet, apiKey: 'YOUR_API_KEY' })
 ```
 
+### With a wallet adapter
+
+To sign with a managed wallet (Privy, Turnkey, Fireblocks, Bankr) or a raw private key, wrap a
+[`@opensea/wallet-adapters`](https://github.com/ProjectOpenSea/wallet-adapters) adapter in its
+ethers bridge and pass the result as the signer. Orders are signed through the adapter's
+`signTypedData`, and fulfillments, approvals and onchain cancels go through its `sendTransaction`.
+The provider is used for reads and receipts only.
+
+```typescript
+import { ethers } from "ethers";
+import { OpenSeaSDK, Chain } from "@opensea/sdk";
+import { createWalletFromEnv } from "@opensea/wallet-adapters";
+import { walletAdapterToEthersSigner } from "@opensea/wallet-adapters/ethers";
+
+const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
+const signer = walletAdapterToEthersSigner(createWalletFromEnv(), provider);
+const sdk = new OpenSeaSDK(signer, { chain: Chain.Base, apiKey: "YOUR_API_KEY" });
+
+const listing = await sdk.createListing({
+  asset: { tokenAddress, tokenId },
+  accountAddress: await signer.getAddress(),
+  amount: "0.5",
+});
+```
+
+The adapter has to support typed-data signing (`wallet.capabilities.signTypedData`) to create
+listings and offers.
+
 ### Wallet-authenticated API helpers
 
 For a server-side EVM signer, `OpenSeaAuth` signs in with SIWE, creates a scoped
