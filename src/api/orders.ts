@@ -154,6 +154,10 @@ export class OrdersAPI {
   /**
    * Offchain cancel an order, offer or listing, by its order hash when protected by the SignedZone.
    *
+   * The API refuses an offchain cancel for a recently created order ("Orders created recently
+   * must be cancelled onchain"). Cancel it onchain instead: `sdk.cancelOrder()` sends the
+   * transaction, or {@link OrdersAPI.createCancelOrderActions | createCancelOrderActions} returns the steps to execute.
+   *
    * The OpenSea OpenAPI `CancelRequest` schema uses camelCase
    * `offererSignature`, so we opt out of automatic snakeize.
    */

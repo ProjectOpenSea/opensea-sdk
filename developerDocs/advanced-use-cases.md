@@ -149,7 +149,8 @@ await openseaSDK.offchainCancelOrder(
   protocolAddress,
   orderHash,
   Chain.Mainnet,
-  // The offerer signature is optional; it is derived from the signer when omitted.
+  undefined, // offererSignature: optional
+  true, // useSignerToDeriveOffererSignature: sign with the SDK's signer
 );
 ```
 
@@ -160,6 +161,8 @@ Offchain cancellation is:
 - **Limited**: Only works for SignedZone-protected orders
 - **Authentication**: If `offererSignature` is not provided, the API key used to initialize the SDK must belong to the order's offerer
 - **Note**: Cancellation is only assured if no fulfillment signature was vended before cancellation
+
+The API refuses an offchain cancel for a recently created order, with the error "Orders created recently must be cancelled onchain". Cancel that order onchain with `cancelOrder()` (see [Onchain Order Cancellation](#onchain-order-cancellation)); the error the SDK throws names `cancelOrder` too. `sdk.api.orders.createCancelOrderActions()` returns the same onchain cancel as steps to execute yourself.
 
 ### Bulk Order Creation
 

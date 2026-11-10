@@ -558,3 +558,83 @@ describe("SDK: cancelOrder (singular)", () => {
     )
   })
 })
+
+describe("SDK: offchainCancelOrder", () => {
+  const orderHash = `0x${"ab".repeat(32)}`
+
+  const apiError = (message: string, statusCode = 400) =>
+    Object.assign(new Error(message), {
+      statusCode,
+      responseBody: { errors: [message] },
+    })
+
+  test("names cancelOrder when the API refuses a recently created order", async () => {
+    const refusal = apiError(
+      "Server Error: Orders created recently must be cancelled onchain. Use the cancel order actions to build the onchain transaction",
+    )
+    const offchainCancelOrder = vi.fn().mockRejectedValue(refusal)
+    const manager = new CancellationManager(
+      createMockContext({ api: { offchainCancelOrder } }),
+    )
+
+    const thrown = await manager
+      .offchainCancelOrder(DEFAULT_SEAPORT_CONTRACT_ADDRESS, orderHash)
+      .then(
+        () => undefined,
+        (e: unknown) => e,
+      )
+
+    expect(thrown).toBe(refusal)
+    expect((thrown as Error).message).toContain(
+      "Orders created recently must be cancelled onchain.",
+    )
+    expect((thrown as Error).message).toContain("sdk.cancelOrder(")
+    expect(thrown).toMatchObject({
+      statusCode: 400,
+      responseBody: { errors: [expect.any(String)] },
+    })
+  })
+
+  test("passes other API errors through unchanged", async () => {
+    const other = apiError("Server Error: Order not found", 404)
+    const offchainCancelOrder = vi.fn().mockRejectedValue(other)
+    const manager = new CancellationManager(
+      createMockContext({ api: { offchainCancelOrder } }),
+    )
+
+    await expect(
+      manager.offchainCancelOrder(DEFAULT_SEAPORT_CONTRACT_ADDRESS, orderHash),
+    ).rejects.toThrow(/^Server Error: Order not found$/)
+  })
+
+  test("rethrows a non-Error rejection as is", async () => {
+    const offchainCancelOrder = vi
+      .fn()
+      .mockRejectedValue("Orders created recently must be cancelled onchain")
+    const manager = new CancellationManager(
+      createMockContext({ api: { offchainCancelOrder } }),
+    )
+
+    await expect(
+      manager.offchainCancelOrder(DEFAULT_SEAPORT_CONTRACT_ADDRESS, orderHash),
+    ).rejects.toBe("Orders created recently must be cancelled onchain")
+  })
+
+  test("returns the API response on success", async () => {
+    const response = { lastSignatureIssuedValidUntil: null }
+    const offchainCancelOrder = vi.fn().mockResolvedValue(response)
+    const manager = new CancellationManager(
+      createMockContext({ api: { offchainCancelOrder } }),
+    )
+
+    await expect(
+      manager.offchainCancelOrder(DEFAULT_SEAPORT_CONTRACT_ADDRESS, orderHash),
+    ).resolves.toBe(response)
+    expect(offchainCancelOrder).toHaveBeenCalledWith(
+      DEFAULT_SEAPORT_CONTRACT_ADDRESS,
+      orderHash,
+      "ethereum",
+      undefined,
+    )
+  })
+})

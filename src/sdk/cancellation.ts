@@ -340,6 +340,11 @@ export class CancellationManager {
    * Offchain cancel an order, offer or listing, by its order hash when protected by the SignedZone.
    * Protocol and Chain are required to prevent hash collisions.
    * Please note cancellation is only assured if a fulfillment signature was not vended prior to cancellation.
+   *
+   * The API refuses an offchain cancel for a recently created order, with the error
+   * "Orders created recently must be cancelled onchain". Cancel such an order onchain with
+   * {@link CancellationManager.cancelOrder | cancelOrder}. When that error comes back, the thrown
+   * message names `cancelOrder`; `statusCode` and `responseBody` are kept.
    * @param protocolAddress The Seaport address for the order.
    * @param orderHash The order hash, or external identifier, of the order.
    * @param chain The chain where the order is located.
@@ -365,11 +370,33 @@ export class CancellationManager {
         chain,
       )
     }
-    return this.context.api.offchainCancelOrder(
-      protocolAddress,
-      orderHash,
-      chain,
-      offererSignature,
-    )
+    try {
+      return await this.context.api.offchainCancelOrder(
+        protocolAddress,
+        orderHash,
+        chain,
+        offererSignature,
+      )
+    } catch (error) {
+      throw withOnchainCancelHint(error)
+    }
   }
+}
+
+const RECENT_ORDER_OFFCHAIN_CANCEL_REFUSAL =
+  /created recently must be cancell?ed onchain/i
+
+/**
+ * The API's refusal for a recently created order points at its REST cancel-actions endpoint.
+ * An SDK caller has `cancelOrder` for the same thing, so say that. The error is mutated rather
+ * than replaced so `statusCode` and `responseBody` survive for callers that branch on them.
+ */
+function withOnchainCancelHint(error: unknown): unknown {
+  if (
+    error instanceof Error &&
+    RECENT_ORDER_OFFCHAIN_CANCEL_REFUSAL.test(error.message)
+  ) {
+    error.message = `${error.message} Cancel it onchain with sdk.cancelOrder({ orderHash, protocolAddress, accountAddress }).`
+  }
+  return error
 }

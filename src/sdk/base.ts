@@ -510,7 +510,13 @@ export class BaseOpenSeaSDK {
     return this._cancellationManager.cancelOrder(options)
   }
 
-  /** Offchain cancel an order by its order hash when protected by the SignedZone. */
+  /**
+   * Offchain cancel an order by its order hash when protected by the SignedZone.
+   *
+   * The API refuses this for a recently created order ("Orders created recently must be
+   * cancelled onchain"); cancel it onchain with {@link BaseOpenSeaSDK.cancelOrder | cancelOrder}
+   * instead. The thrown error names `cancelOrder` when that happens.
+   */
   public async offchainCancelOrder(
     protocolAddress: string,
     orderHash: string,

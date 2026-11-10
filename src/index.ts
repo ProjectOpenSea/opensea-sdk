@@ -12,6 +12,12 @@ export * from "./auth/oauth-types"
 export * from "./constants"
 export * from "./orders/types"
 export type {
+  EthersJsonRpcProviderLike,
+  EthersProviderLike,
+  EthersSignerLike,
+  EthersSignerOrProvider,
+} from "./provider/ethers-types"
+export type {
   ContractCaller,
   OpenSeaProvider,
   OpenSeaSigner,

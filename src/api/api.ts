@@ -762,6 +762,10 @@ export class OpenSeaAPI {
 
   /**
    * Offchain cancel an order, offer or listing, by its order hash when protected by the SignedZone.
+   *
+   * The API refuses an offchain cancel for a recently created order ("Orders created recently
+   * must be cancelled onchain"). Cancel it onchain instead with `sdk.cancelOrder()`, or build the
+   * steps with `api.orders.createCancelOrderActions()`.
    * Protocol and Chain are required to prevent hash collisions.
    * Please note cancellation is only assured if a fulfillment signature was not vended prior to cancellation.
    * @param protocolAddress The Seaport address for the order.

@@ -6,6 +6,7 @@ import {
   createEthersWallet,
   getEthersAccounts,
 } from "./provider/ethers-adapter"
+import type { EthersSignerOrProvider } from "./provider/ethers-types"
 import { BaseOpenSeaSDK } from "./sdk/base"
 import { Chain, type OpenSeaAPIConfig } from "./types"
 import {
@@ -31,26 +32,29 @@ import {
 export class OpenSeaSDK extends BaseOpenSeaSDK {
   /**
    * Create a new instance of OpenSeaSDK.
-   * @param signerOrProvider Signer or provider to use for transactions.
+   * @param signerOrProvider Signer or provider to use for transactions, from either the CommonJS or
+   * the ESM build of ethers.
    * @param apiConfig configuration options, including `chain`
    * @param logger optional function for logging debug strings. defaults to no logging
    */
   constructor(
-    signerOrProvider: Signer | JsonRpcProvider,
+    signerOrProvider: EthersSignerOrProvider,
     apiConfig: OpenSeaAPIConfig = {},
     logger?: (arg: string) => void,
   ) {
+    // The ESM build's classes are the same objects at runtime; see EthersSignerOrProvider.
+    const runner = signerOrProvider as Signer | JsonRpcProvider
     apiConfig.chain ??= Chain.Mainnet
     const chain = apiConfig.chain
     const api = new OpenSeaAPI(apiConfig)
     const resolvedLogger = logger ?? ((arg: string) => arg)
 
-    const wallet = createEthersWallet(signerOrProvider)
-    const contractCaller = createEthersContractCaller(signerOrProvider)
+    const wallet = createEthersWallet(runner)
+    const contractCaller = createEthersContractCaller(runner)
 
     const defaultConduit = getDefaultConduit(chain)
     const seaportAddress = getSeaportAddress(chain)
-    const seaport = new Seaport(signerOrProvider, {
+    const seaport = new Seaport(runner, {
       conduitKeyToConduit: {
         [defaultConduit.key]: defaultConduit.address,
       },
@@ -67,8 +71,7 @@ export class OpenSeaSDK extends BaseOpenSeaSDK {
       api,
       chain,
       logger: resolvedLogger,
-      getAvailableAccounts: () =>
-        getEthersAccounts(signerOrProvider, resolvedLogger),
+      getAvailableAccounts: () => getEthersAccounts(runner, resolvedLogger),
       cachedPaymentTokenDecimals: getDefaultPaymentTokenDecimals(chain),
     })
   }
