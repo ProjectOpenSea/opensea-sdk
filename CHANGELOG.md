@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 13.0.6
+
+### Patch Changes
+
+- e9f01bf: `Camelize` maps template literal pattern keys again, as it did in 13.0.2. A key typed `` `trait_${string}` `` or `` `slot_${number}` `` camelizes to a type that `traitFoo` and `slot1` fit, matching what `camelizeKeysDeep` returns at runtime. Literal keys keep the 13.0.3 rule (`foo__bar` stays `foo_Bar`). Reported in [opensea-sdk#2038](https://github.com/ProjectOpenSea/opensea-sdk/issues/2038).
+
 ## 13.0.5
 
 ### Patch Changes

@@ -250,4 +250,26 @@ describe("Camelize<T>", () => {
     // @ts-expect-error the runtime keeps the unmatched underscore, so `fooBar` does not exist
     expect(result.fooBar).toBeUndefined()
   })
+
+  test("maps template literal pattern keys the way the runtime does", () => {
+    type Wire = { [k: `trait_${string}`]: number } & {
+      [k: `slot_${number}`]: string
+    }
+    const result = camelizeKeysDeep({ trait_foo: 1, slot_1: "a" } as Wire)
+    expect(result).toEqual({ traitFoo: 1, slot1: "a" })
+    expectTypeOf(result.traitFoo).toEqualTypeOf<number>()
+    expectTypeOf(result.slot1).toEqualTypeOf<string>()
+  })
+
+  test("keeps the literal underscore rule ahead of a pattern key", () => {
+    type Out = Camelize<{ [k: `foo__${string}`]: number }>
+    const result: Out = camelizeKeysDeep({ foo__bar: 1 } as {
+      [k: `foo__${string}`]: number
+    })
+    expect(result).toEqual({ foo_Bar: 1 })
+    expectTypeOf(result.foo_Bar).toEqualTypeOf<number>()
+    expectTypeOf<Out>().toEqualTypeOf<{
+      [k: `foo_${Capitalize<string>}`]: number
+    }>()
+  })
 })

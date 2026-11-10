@@ -172,12 +172,20 @@ type LowerAlphanumeric =
  * {@link snakeToCamel}: `"is_nsfw"` → `"isNsfw"`. Only an underscore followed
  * by a lowercase ASCII letter or digit is consumed, so `"foo__bar"` →
  * `"foo_Bar"` and `"trailing_"` stays as is.
+ *
+ * When the underscore is followed by a pattern placeholder rather than a
+ * literal character (`` `trait_${string}` ``, `` `slot_${number}` ``), the
+ * rest is capitalized, so `"trait_foo"` and `"slot_1"` fit the result just as
+ * their runtime forms `"traitFoo"` and `"slot1"` do.
  */
 type SnakeToCamel<S extends string> =
   S extends `${infer Head}_${infer Next}${infer Tail}`
     ? Next extends LowerAlphanumeric
       ? `${Head}${Uppercase<Next>}${SnakeToCamel<Tail>}`
-      : `${Head}_${SnakeToCamel<`${Next}${Tail}`>}`
+      : // A pattern such as `${string}` has no required key, so an empty object fits its Record.
+        Record<never, never> extends Record<Next, 1>
+        ? `${Head}${Capitalize<SnakeToCamel<`${Next}${Tail}`>>}`
+        : `${Head}_${SnakeToCamel<`${Next}${Tail}`>}`
     : S
 
 /**
