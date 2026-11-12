@@ -11,15 +11,19 @@
 
 # @opensea/sdk <!-- omit in toc -->
 
-This is the TypeScript SDK for [OpenSea](https://opensea.io), the largest marketplace for NFTs and tokens.
+TypeScript SDK for [OpenSea](https://opensea.io). Read and filter the orderbook, create and fulfill listings and offers, swap tokens across chains, and subscribe to marketplace events.
 
-It allows developers to access the official orderbook, filter it, create listings and offers, complete trades programmatically, and swap tokens across chains.
+## Install
 
-Get started by getting an API key and instantiating your own OpenSea SDK instance. Then you can create orders off-chain or fulfill orders onchain, and listen to events in the process.
+```bash
+npm install @opensea/sdk
+```
 
-### Get an API key
+Requires Node.js 22 or newer. `ethers` ships as a dependency; install `viem` too if you use the viem entry point.
 
-**For quick experimentation** — request a free-tier key in code, no signup needed. The returned key is valid for 7 days.
+## Get an API key
+
+For quick experiments, request a free-tier key in code. It needs no signup and expires after 7 days.
 
 ```typescript
 import { ethers } from "ethers";
@@ -36,103 +40,11 @@ Or from the shell:
 curl -s -X POST https://api.opensea.io/api/v2/auth/keys | jq -r '.api_key'
 ```
 
-**For production** — create a permanent key at [opensea.io/settings/developer](https://opensea.io/settings/developer). These keys don't expire, get higher rate limits, and can be rotated from your account. See the [API key docs](https://docs.opensea.io/reference/api-keys) for details.
+For production, create a permanent key at [opensea.io/settings/developer](https://opensea.io/settings/developer). These keys don't expire, get higher rate limits, and can be rotated. See the [API key docs](https://docs.opensea.io/reference/api-keys).
 
-Happy seafaring!
+## Quick start
 
-## Calling the API
-
-`sdk.api` groups its methods by domain: `sdk.api.collections.getCollection(slug)`,
-`sdk.api.nfts.getNFT(...)`, `sdk.api.offers.getAllOffers(...)`, and so on across `accounts`,
-`assets`, `chains`, `drops`, `events`, `listings`, `orders`, `tokens`, `tools` (beta),
-`transactions` and `walletAuth`. Search stays flat as `sdk.api.search(args)`.
-
-The older flat methods (`sdk.api.getCollection(slug)`) still work, carry `@deprecated` tags naming
-their replacements, and are removed in the next major. See the
-[API reference](developerDocs/api-reference.md#calling-the-api) for the four whose names change.
-
-## Response casing
-
-The API speaks snake_case. The SDK rewrites response keys to camelCase before handing them back,
-and rewrites camelCase request bodies and query params to snake_case on the way out. So
-`collection.bannerImageUrl` is what you read, and `banner_image_url` is what crosses the wire.
-
-`@opensea/api-types` describes the wire, so its types stay snake_case. Do not annotate a value an
-SDK method returned with one of them:
-
-```typescript
-import type { AccountResolveResponse } from "@opensea/api-types";
-
-// Wrong. This compiles, and every snake_case field reads undefined at runtime.
-const account: AccountResolveResponse = await sdk.api.accounts.resolveAccount("vitalik.eth");
-console.log(account.ens_name); // undefined; the runtime key is `ensName`
-```
-
-TypeScript rejects that pairing only when the wire type has a required snake_case key somewhere in
-its tree. Of the 166 schemas in the spec that declare snake_case properties directly, 15 take the
-camelized value with no error, `AccountResolveResponse` among them: its one required property,
-`address`, has no underscore to rewrite, so nothing is missing and the camelCase keys are allowed
-through as extras.
-
-Two spellings work. Use the SDK's own response type, which is already camelized:
-
-```typescript
-import type { ResolveAccountResponse } from "@opensea/sdk";
-
-const account: ResolveAccountResponse = await sdk.api.accounts.resolveAccount("vitalik.eth");
-console.log(account.ensName);
-```
-
-Or wrap the wire type in `Camelize`, for a response with no dedicated alias in this package:
-
-```typescript
-import type { AccountResolveResponse } from "@opensea/api-types";
-import type { Camelize } from "@opensea/sdk";
-
-const account: Camelize<AccountResolveResponse> = await sdk.api.accounts.resolveAccount("vitalik.eth");
-```
-
-`camelizeResponse: false` turns the rewrite off for one call. Use it where the response keys are
-data rather than field names: `getTraits` is keyed by collection-authored trait names, so the
-rewrite would report a `dark_brown` trait as `darkBrown` and merge two traits that differ only in
-casing.
-
-Write it as the literal `false`. `api.get`, `api.post` and `api.request` overload on that literal
-and hand back the raw `T`, so the declared type is the wire shape the call actually returns:
-
-```typescript
-type UploadPolicy = { upload_url: string; success_action_status: string };
-
-const policy = await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, {
-  camelizeResponse: false,
-});
-
-console.log(policy.success_action_status); // typed, and present at runtime
-
-// @ts-expect-error the rewrite did not run, so there is no `successActionStatus`
-console.log(policy.successActionStatus);
-```
-
-The literal is what selects that signature, and TypeScript keeps it only where the property is
-written inline at the call site or the object is declared `as const`. The two spellings below
-compile, and the runtime still skips the rewrite whenever the value is `false`, but the declared
-type is `Camelize<T>` either way, so it claims camelCase properties the response does not have:
-
-```typescript
-type UploadPolicy = { upload_url: string; success_action_status: string };
-declare const skipRewrite: boolean;
-
-// A boolean whose value the compiler cannot see.
-await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, {
-  camelizeResponse: skipRewrite,
-});
-
-// A `const` declaration widens `false` to `boolean`; `as const` keeps the literal.
-const options = { camelizeResponse: false };
-await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, options);
-```
-
-## Quick Start
+Do not ship your API key in frontend code. See [Security warning](#security-warning).
 
 ### With ethers.js
 
@@ -159,9 +71,9 @@ const sdk = new OpenSeaSDK({ publicClient }, { chain: Chain.Mainnet, apiKey: 'YO
 
 To sign with a managed wallet (Privy, Turnkey, Fireblocks, Bankr) or a raw private key, wrap a
 [`@opensea/wallet-adapters`](https://github.com/ProjectOpenSea/wallet-adapters) adapter in its
-ethers bridge and pass the result as the signer. Orders are signed through the adapter's
-`signTypedData`, and fulfillments, approvals and onchain cancels go through its `sendTransaction`.
-The provider is used for reads and receipts only.
+ethers bridge and pass the result as the signer. Orders are signed with the adapter's
+`signTypedData`. Fulfillments, approvals and onchain cancels go through its `sendTransaction`.
+The provider handles reads and receipts only.
 
 ```typescript
 import { ethers } from "ethers";
@@ -180,14 +92,104 @@ const listing = await sdk.createListing({
 });
 ```
 
-The adapter has to support typed-data signing (`wallet.capabilities.signTypedData`) to create
-listings and offers.
+Creating listings and offers requires an adapter that supports typed-data signing
+(`wallet.capabilities.signTypedData`).
 
-### Wallet-authenticated API helpers
+## Calling the API
 
-For a server-side EVM signer, `OpenSeaAuth` signs in with SIWE, creates a scoped
-personal access token (PAT), and exchanges it for the short-lived JWT used by
-REST and MCP.
+`sdk.api` groups methods by domain: `accounts`, `assets`, `chains`, `collections`, `drops`,
+`events`, `listings`, `nfts`, `offers`, `orders`, `tokens`, `tools` (beta), `transactions` and
+`walletAuth`. For example, `sdk.api.collections.getCollection(slug)` or
+`sdk.api.offers.getAllOffers(...)`. Search is the one flat method: `sdk.api.search(args)`.
+
+The older flat methods (`sdk.api.getCollection(slug)`) still work but are `@deprecated`, name
+their replacements, and will be removed in the next major version. Four of them change name; see
+the [API reference](developerDocs/api-reference.md#calling-the-api).
+
+## Response casing
+
+The API uses snake_case. The SDK converts response keys to camelCase, and converts camelCase
+request bodies and query params to snake_case. You read `collection.bannerImageUrl`; the wire
+carries `banner_image_url`.
+
+`@opensea/api-types` describes the wire format, so its types are snake_case. Don't use them to
+annotate a value an SDK method returned:
+
+```typescript
+import type { AccountResolveResponse } from "@opensea/api-types";
+
+// Wrong. This compiles, and every snake_case field reads undefined at runtime.
+const account: AccountResolveResponse = await sdk.api.accounts.resolveAccount("vitalik.eth");
+console.log(account.ens_name); // undefined; the runtime key is `ensName`
+```
+
+TypeScript only rejects this when the wire type has a required snake_case key somewhere in its
+tree. `AccountResolveResponse` has one required property, `address`, which has no underscore, so
+the camelCase object type-checks and every snake_case field is `undefined` at runtime.
+
+Use the SDK's own response type, which is already camelCase:
+
+```typescript
+import type { ResolveAccountResponse } from "@opensea/sdk";
+
+const account: ResolveAccountResponse = await sdk.api.accounts.resolveAccount("vitalik.eth");
+console.log(account.ensName);
+```
+
+Or, for a response with no SDK alias, wrap the wire type in `Camelize`:
+
+```typescript
+import type { AccountResolveResponse } from "@opensea/api-types";
+import type { Camelize } from "@opensea/sdk";
+
+const account: Camelize<AccountResolveResponse> = await sdk.api.accounts.resolveAccount("vitalik.eth");
+```
+
+Pass `camelizeResponse: false` to skip the conversion for one call. Use it when response keys are
+data rather than field names. `getTraits`, for example, is keyed by trait names the collection
+chose, so conversion would turn a `dark_brown` trait into `darkBrown` and merge two traits that
+differ only in casing.
+
+Write it as the literal `false`. `api.get`, `api.post` and `api.request` have an overload for
+that literal that returns the raw `T`, so the declared type matches the response:
+
+```typescript
+type UploadPolicy = { upload_url: string; success_action_status: string };
+
+const policy = await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, {
+  camelizeResponse: false,
+});
+
+console.log(policy.success_action_status); // typed, and present at runtime
+
+// @ts-expect-error the rewrite did not run, so there is no `successActionStatus`
+console.log(policy.successActionStatus);
+```
+
+TypeScript keeps the literal only when the option is written inline at the call site or the
+object is declared `as const`. In the cases below the runtime still skips the conversion, but the
+declared type is `Camelize<T>`, which claims camelCase properties the response doesn't have:
+
+```typescript
+type UploadPolicy = { upload_url: string; success_action_status: string };
+declare const skipRewrite: boolean;
+
+// A boolean whose value the compiler cannot see.
+await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, {
+  camelizeResponse: skipRewrite,
+});
+
+// A `const` declaration widens `false` to `boolean`; `as const` keeps the literal.
+const options = { camelizeResponse: false };
+await sdk.api.get<UploadPolicy>("/api/v2/some/path", undefined, options);
+```
+
+## Examples
+
+### Wallet-authenticated API
+
+For a server-side EVM signer, `OpenSeaAuth` signs in with SIWE, creates a scoped personal access
+token (PAT), and exchanges it for the short-lived JWT that REST and MCP accept.
 
 ```typescript
 import { Wallet } from "ethers"
@@ -210,16 +212,14 @@ try {
 }
 ```
 
-Keep the same `OpenSeaAuth` instance through revocation because it holds the
-SIWE session. `revoke()` accepts the current JWT as a guard, revokes its backing
-PAT, and clears the in-memory auth state. `walletAuth` provides typed helpers
-for every deployed scoped operation; request only the scopes the task needs. See the
-[wallet-auth guide](https://docs.opensea.io/reference/auth).
+Keep the same `OpenSeaAuth` instance until you revoke, because it holds the SIWE session.
+`revoke()` takes the current JWT as a guard, revokes the PAT behind it, and clears the in-memory
+auth state. `walletAuth` has a typed helper for every deployed scoped operation. Request only the
+scopes the task needs. See the [wallet-auth guide](https://docs.opensea.io/reference/auth).
 
 ### Cross-chain drop minting
 
-Build the ordered transactions for paying on one chain and minting a drop on
-another through the typed API client:
+Build the ordered transactions to pay on one chain and mint a drop on another:
 
 ```typescript
 const mint = await sdk.api.drops.buildCrossChainMintTransactions("pyro-on-ape", {
@@ -238,7 +238,9 @@ const receipt = await sdk.api.transactions.getTransactionReceipt(mint.receiptReq
 
 ### Order actions on EVM and Solana
 
-Use the typed action APIs when a wallet needs ordered approval, signing, or transaction steps. Solana callers should pass `svm_order.id` as the order identifier and preserve base58 address casing.
+The action APIs return the ordered approval, signing and transaction steps a wallet needs to
+run. On Solana, pass `svm_order.id` as the order identifier and keep base58 addresses in their
+original case.
 
 ```typescript
 const actions = await sdk.api.listings.createListingFulfillmentActions({
@@ -257,12 +259,13 @@ const actions = await sdk.api.listings.createListingFulfillmentActions({
 // sdk.api.orders.createCancelOrderActions(protocol, orderIdentifier, request, chain)
 ```
 
-Execute `actions.steps` in order. If a Solana action includes a partially signed transaction or requires a Jito bundle, submit it exactly as directed by the response rather than rebuilding or broadcasting it through a public RPC.
+Run `actions.steps` in order. If a Solana step includes a partially signed transaction or needs a
+Jito bundle, submit it exactly as the response directs. Don't rebuild it or broadcast it through a
+public RPC.
 
 ### Token activity stats
 
-Read materialized trade count and USD volume for a token without aggregating
-raw events:
+Get precomputed trade count and USD volume for a token without aggregating raw events:
 
 ```typescript
 import { Chain } from "@opensea/sdk";
@@ -277,13 +280,12 @@ console.log(activity.windows["24h"]?.trades)
 console.log(activity.windows["24h"]?.volumeUsd)
 ```
 
-The SDK exposes camel-cased fields. A requested window is absent when the token
-has no swaps in that period.
+A requested window is missing from `windows` when the token had no swaps in that period.
 
 ### Real-time events
 
-Subscribe to marketplace events over WebSocket from the `@opensea/sdk/stream`
-subpath. Streaming events do not count toward your API rate limits.
+Subscribe to marketplace events over WebSocket with the `@opensea/sdk/stream` subpath. Stream
+events don't count toward your API rate limits.
 
 ```typescript
 import { OpenSeaStreamClient, EventType } from "@opensea/sdk/stream";
@@ -308,41 +310,35 @@ client.onEvents(
 unsubscribe();
 ```
 
-Node 22 or newer, or any browser, needs no extra dependencies. The client
-reconnects with backoff and re-subscribes to every topic it was watching, so a
-dropped connection recovers without any work from you.
+It runs in Node 22+ and browsers with no extra dependencies. After a dropped connection, the
+client reconnects with backoff and re-subscribes to every topic it was watching.
 
-This code was published as `@opensea/stream-js` until version 0.4.0. See the
-[migration guide](developerDocs/stream-migration.md) for the differences.
+Before version 0.4.0 this client was published as `@opensea/stream-js`. See the
+[migration guide](developerDocs/stream-migration.md).
 
 ## Documentation
 
-- [Quick Start Guide](developerDocs/quick-start.md)
-- [Getting Started Guide](developerDocs/getting-started.md)
-- [API Reference](developerDocs/api-reference.md)
+- [Quick start guide](developerDocs/quick-start.md)
+- [Getting started guide](developerDocs/getting-started.md)
+- [API reference](developerDocs/api-reference.md)
 - [Stream migration from @opensea/stream-js](developerDocs/stream-migration.md)
-- [Advanced Use Cases](developerDocs/advanced-use-cases.md)
-- [Frequently Asked Questions](developerDocs/faq.md)
+- [Advanced use cases](developerDocs/advanced-use-cases.md)
+- [FAQ](developerDocs/faq.md)
 - [Contributing](CONTRIBUTING.md)
 
-### Security Warning
+## Security warning
 
-**Do not use this SDK directly in client-side/frontend applications.**
+Don't use this SDK in frontend code. It needs your API key, and anyone can extract a key embedded
+in a browser or mobile app, then abuse it or burn through your rate limit.
 
-The OpenSea SDK requires an API key for initialization. If you embed your API key in frontend code (e.g., browser applications, mobile apps), it will be publicly exposed and could be extracted by anyone, leading to potential abuse and rate limit issues.
+For a frontend app:
 
-#### Recommended Architecture
-
-For frontend applications that need to interact with OpenSea functionality:
-
-1. **Create a backend API wrapper**: Set up your own backend server that securely stores your OpenSea API key
-2. **Call OpenSea SDK server-side**: Use `@opensea/sdk` on your backend to interact with OpenSea's APIs
-3. **Return data to your frontend**: Send the necessary data (like transaction parameters) back to your frontend
-4. **Execute transactions in the browser**: Have users sign transactions with their own wallets (e.g., MetaMask) in the browser
+1. Run your own backend that stores the API key.
+2. Call `@opensea/sdk` from that backend.
+3. Return what the frontend needs, such as transaction parameters.
+4. Have users sign transactions in the browser with their own wallet (for example, MetaMask).
 
 ## Changelog
-
-The changelog for recent versions can be found at:
 
 - @opensea/sdk: https://github.com/ProjectOpenSea/opensea-sdk/releases
 - OpenSea API: https://docs.opensea.io/changelog
