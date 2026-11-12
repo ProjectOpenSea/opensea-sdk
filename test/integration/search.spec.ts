@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest"
 import { Chain } from "../../src/types"
-import { getSdkForChain } from "../utils/setupIntegration"
+import { getReadOnlySdkForChain } from "../utils/setupIntegration"
 
 describe("SDK: search", () => {
   test("Search for collections by name", async () => {
-    const response = await getSdkForChain(Chain.Mainnet).api.search({
+    const response = await getReadOnlySdkForChain(Chain.Mainnet).api.search({
       query: "bored ape",
       assetTypes: ["collection"],
       limit: 5,
@@ -28,7 +28,7 @@ describe("SDK: search", () => {
   })
 
   test("Search across all asset types", async () => {
-    const response = await getSdkForChain(Chain.Mainnet).api.search({
+    const response = await getReadOnlySdkForChain(Chain.Mainnet).api.search({
       query: "ethereum",
       assetTypes: ["collection", "token"],
       limit: 10,

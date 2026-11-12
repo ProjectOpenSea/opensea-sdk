@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest"
 import { Chain } from "../../src/types"
 import { decodeTokenIds } from "../../src/utils/utils"
-import { getSdkForChain } from "../utils/setupIntegration"
+import { getReadOnlySdkForChain } from "../utils/setupIntegration"
 
 describe("SDK: getCollectionOffers", () => {
   test("Get Collection Offers", async () => {
     const slug = "cool-cats-nft"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.offers.getCollectionOffers(slug)
 

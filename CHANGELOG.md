@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 14.0.1
+
+### Patch Changes
+
+- 29a3849: `fulfillPrivateOrder` now works with a private listing read from the OpenSea API. The API returns orders with a null `protocolData.signature`, which made the `matchOrders` call fail with `TypeError: Cannot read properties of null (reading 'then')`. When the signature is missing, the SDK now fetches it from the fulfillment data endpoint as the fulfilling account before matching. It also refuses, before asking the API, to fulfill a private listing for any account other than its taker, and rejects fulfillment data that does not describe the requested order (same offerer and salt) instead of submitting a transaction that would revert.
+
 ## 14.0.0
 
 ### Major Changes

@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest"
 import { Chain } from "../../src/types"
-import { getSdkForChain } from "../utils/setupIntegration"
+import { getReadOnlySdkForChain } from "../utils/setupIntegration"
 
 describe("SDK: getAllOffers", () => {
   test("Get All Offers", async () => {
     const slug = "cool-cats-nft"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.offers.getAllOffers(slug)
 
@@ -29,7 +29,7 @@ describe("SDK: getAllOffers", () => {
 describe("SDK: getAllListings", () => {
   test("Get All Listings", async () => {
     const slug = "cool-cats-nft"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.listings.getAllListings(slug)
 
@@ -59,7 +59,7 @@ describe("SDK: getAllListings", () => {
     ).toBeTruthy()
 
     // Should get the next page of listings
-    const responsePage2 = await getSdkForChain(
+    const responsePage2 = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.listings.getAllListings(slug, undefined, response.next)
     expect(responsePage2, "Response should not be null").toBeTruthy()
@@ -72,7 +72,7 @@ describe("SDK: getBestOffer", () => {
   test("Get Best Offer", async () => {
     const slug = "cool-cats-nft"
     const tokenId = 1
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.offers.getBestOffer(slug, tokenId)
 
@@ -97,7 +97,7 @@ describe("SDK: getBestOffer", () => {
 describe("SDK: getBestListing", () => {
   test("Get Best Listing", async () => {
     const slug = "cool-cats-nft"
-    const { listings } = await getSdkForChain(
+    const { listings } = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.listings.getAllListings(slug)
     const listing = listings[0]
@@ -106,7 +106,7 @@ describe("SDK: getBestListing", () => {
     // and the test still validates round-tripping through getBestListing.
     const tokenId =
       listing.protocolData!.parameters.offer[0].identifierOrCriteria
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.listings.getBestListing(slug, tokenId)
 
@@ -135,7 +135,7 @@ describe("SDK: getBestListing", () => {
 describe("SDK: getBestListings", () => {
   test("Get Best Listing", async () => {
     const slug = "cool-cats-nft"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.listings.getBestListings(slug)
 
@@ -149,7 +149,7 @@ describe("SDK: getTraitOffers", () => {
     const slug = "boredapeyachtclub"
     const type = "Fur"
     const value = "Solid Gold"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.offers.getTraitOffers(slug, type, value)
 
@@ -186,7 +186,7 @@ describe("SDK: getTraitOffers", () => {
     const slug = "boredapeyachtclub"
     const type = "Fur"
     const value = "Solid Gold"
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.offers.getTraitOffers(slug, type, value, 5)
 

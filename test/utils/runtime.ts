@@ -8,6 +8,26 @@ export interface TestContext {
   skip: () => void
 }
 
+/**
+ * Reads an env var, treating an empty string as unset. GitHub Actions passes
+ * `${{ vars.X }}` as "" when the repo variable does not exist, which `??`
+ * would keep.
+ */
+export const envOr = (name: string, fallback: string): string => {
+  const value = process.env[name]
+  return value === undefined || value === "" ? fallback : value
+}
+
+/** Like {@link envOr} with no fallback: "" and unset both come back undefined. */
+export const envOptional = (name: string): string | undefined => {
+  const value = process.env[name]
+  return value === undefined || value === "" ? undefined : value
+}
+
+/** ethers needs the 0x prefix; 1Password and some CI secrets store keys without it. */
+export const normalizePrivateKey = (key: string): string =>
+  key.startsWith("0x") ? key : `0x${key}`
+
 export const normalizeChain = (chain: string): Chain => {
   if (!chain) {
     throw new Error("normalizeChain: chain is required")
@@ -51,7 +71,10 @@ export const getWalletForChain = (
   privateKey: string,
   chain: Chain,
 ): ethers.Wallet => {
-  return new ethers.Wallet(privateKey, getProviderForChain(chain))
+  return new ethers.Wallet(
+    normalizePrivateKey(privateKey),
+    getProviderForChain(chain),
+  )
 }
 
 export const ensureVarsOrSkip = <T extends Record<string, unknown>>(

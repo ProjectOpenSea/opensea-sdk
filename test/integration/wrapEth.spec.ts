@@ -1,72 +1,45 @@
 import { parseEther } from "ethers"
-import { describe, expect, test } from "vitest"
-import { Chain, TokenStandard } from "../../src/types"
-import { getNativeWrapTokenAddress } from "../../src/utils/chain"
+import { beforeAll, describe, expect, test } from "vitest"
+import { requireFixtureReady, wethAsset } from "../utils/fixture"
 import {
   ETH_TO_WRAP,
+  FIXTURE_CHAIN,
   getSdkForChain,
-  requireIntegrationEnv,
-  walletAddress,
+  getWalletAddress,
+  hasWallet,
 } from "../utils/setupIntegration"
 
-describe("SDK: WETH", () => {
-  beforeEach(() => {
-    requireIntegrationEnv()
-  })
+describe.skipIf(!hasWallet)(`SDK: WETH - ${FIXTURE_CHAIN}`, () => {
+  beforeAll(requireFixtureReady)
 
   test("Wrap ETH and Unwrap", async () => {
-    if (!ETH_TO_WRAP) {
-      console.log("ETH_TO_WRAP not set, skipping")
-      return
-    }
-    const startingBalance = await getSdkForChain(Chain.Mainnet).getBalance({
-      accountAddress: walletAddress,
-      asset: {
-        tokenAddress: getNativeWrapTokenAddress(Chain.Mainnet),
-        tokenId: null,
-        tokenStandard: TokenStandard.ERC20,
-      },
+    const sdk = getSdkForChain(FIXTURE_CHAIN)
+    const accountAddress = getWalletAddress()
+    const wrapAmount = parseEther(ETH_TO_WRAP)
+
+    const startingBalance = await sdk.getBalance({
+      accountAddress,
+      asset: wethAsset(),
     })
     console.log("Starting WETH balance:", startingBalance.toString())
 
-    await getSdkForChain(Chain.Mainnet).wrapEth({
-      accountAddress: walletAddress,
-      amountInEth: ETH_TO_WRAP,
-    })
+    await sdk.wrapEth({ accountAddress, amountInEth: ETH_TO_WRAP })
 
-    const wethAsset = {
-      tokenAddress: getNativeWrapTokenAddress(Chain.Mainnet),
-      tokenId: null,
-      tokenStandard: TokenStandard.ERC20,
-    }
-
-    const wrappedBalance = await getSdkForChain(Chain.Mainnet).getBalance({
-      accountAddress: walletAddress,
-      asset: wethAsset,
+    const wrappedBalance = await sdk.getBalance({
+      accountAddress,
+      asset: wethAsset(),
     })
     console.log("Wrapped WETH balance:", wrappedBalance.toString())
-
-    const wethAcquired = wrappedBalance - startingBalance
-    console.log("WETH acquired:", wethAcquired.toString())
-
-    const expectedWrappedBalance = parseEther(ETH_TO_WRAP.toString())
-    expect(wethAcquired).toBe(expectedWrappedBalance)
+    expect(wrappedBalance - startingBalance).toBe(wrapAmount)
 
     console.log("Unwrapping WETH...")
-    await getSdkForChain(Chain.Mainnet).unwrapWeth({
-      accountAddress: walletAddress,
-      amountInEth: ETH_TO_WRAP,
-    })
+    await sdk.unwrapWeth({ accountAddress, amountInEth: ETH_TO_WRAP })
 
-    const unwrappedBalance = await getSdkForChain(Chain.Mainnet).getBalance({
-      accountAddress: walletAddress,
-      asset: wethAsset,
+    const unwrappedBalance = await sdk.getBalance({
+      accountAddress,
+      asset: wethAsset(),
     })
     console.log("Unwrapped WETH balance:", unwrappedBalance.toString())
-
-    const endingBalance = unwrappedBalance - startingBalance
-    console.log("Final WETH balance:", endingBalance.toString())
-
-    expect(endingBalance).toBe(0n)
-  }, 30000)
+    expect(unwrappedBalance - startingBalance).toBe(0n)
+  }, 120_000)
 })

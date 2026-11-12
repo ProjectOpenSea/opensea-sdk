@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { CollectionOrderByOption } from "../../src/api/types"
 import { Chain, SafelistStatus } from "../../src/types"
-import { getSdkForChain } from "../utils/setupIntegration"
+import { getReadOnlySdkForChain } from "../utils/setupIntegration"
 import { processInBatches } from "../utils/utils"
 
 /**
@@ -16,7 +16,7 @@ const allChainCollectionsTest =
 describe("SDK: getCollection", () => {
   test("Get Verified Collection", async () => {
     const slug = "cool-cats-nft"
-    const collection = await getSdkForChain(
+    const collection = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.collections.getCollection(slug)
 
@@ -27,7 +27,7 @@ describe("SDK: getCollection", () => {
   })
 
   test("Get Collections", async () => {
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.collections.getCollections()
     const { collections, next } = response
@@ -35,7 +35,7 @@ describe("SDK: getCollection", () => {
     expect(collections[0].name, "Collection name should exist").toBeTruthy()
     expect(next, "Next cursor should be included").toBeTruthy()
 
-    const response2 = await getSdkForChain(
+    const response2 = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.collections.getCollections(CollectionOrderByOption.MARKET_CAP)
     const { collections: collectionsByMarketCap, next: nextByMarketCap } =
@@ -57,22 +57,24 @@ describe("SDK: getCollection", () => {
   })
 
   test("Get Collections by creator", async () => {
-    const response = await getSdkForChain(
+    const response = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.collections.getCollections(
       CollectionOrderByOption.CREATED_DATE,
       undefined,
-      "cryptoexpert123",
+      "YugaLabs",
     )
-    const { collections } = response
-    expect(collections).toHaveLength(2)
-    expect(collections[0].collection, "test-7836").toBeTruthy()
-    expect(collections[0].collection, "test-7290").toBeTruthy()
+    const slugs = response.collections.map(c => c.collection)
+    expect(slugs).toContain("boredapeyachtclub")
+    expect(slugs).toContain("mutant-ape-yacht-club")
+    expect(slugs, "Creator filter should exclude other creators").not.toContain(
+      "cool-cats-nft",
+    )
   })
 
   test("Get Collection Stats", async () => {
     const slug = "cool-cats-nft"
-    const stats = await getSdkForChain(
+    const stats = await getReadOnlySdkForChain(
       Chain.Mainnet,
     ).api.collections.getCollectionStats(slug)
 
@@ -85,7 +87,7 @@ describe("SDK: getCollection", () => {
   allChainCollectionsTest("Get Collections for all chains", async () => {
     // Excluding Solana (no NFT collections)
     const chains = Object.values(Chain).filter(chain => chain !== Chain.Solana)
-    const sdk = getSdkForChain(Chain.Mainnet)
+    const sdk = getReadOnlySdkForChain(Chain.Mainnet)
 
     await processInBatches(chains, 3, async chain => {
       try {

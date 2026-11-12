@@ -1,0 +1,27 @@
+# Foundry project for the SDK integration fixture (an ERC1155 on Base that the
+# nightly integration suite lists, offers on, and trades). See
+# ../../README-integration.md for deployment.
+#
+# OpenZeppelin and forge-std are borrowed from packages/tool-registry's
+# submodules so this needs no submodules of its own. Run
+# `git submodule update --init packages/tool-registry/lib/openzeppelin-contracts packages/tool-registry/lib/forge-std`
+# (or ./scripts/bootstrap) first.
+[profile.default]
+src = "src"
+script = "script"
+out = "out"
+cache_path = "cache"
+libs = ["../../../../tool-registry/lib"]
+solc = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "none"
+remappings = [
+  "@openzeppelin/contracts/=../../../../tool-registry/lib/openzeppelin-contracts/contracts/",
+  "forge-std/=../../../../tool-registry/lib/forge-std/src/",
+]
+
+[profile.default.fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false

@@ -65,16 +65,19 @@ export class FulfillmentManager {
         "Order is not a private listing - must have a taker address",
       )
     }
+    if (order.taker.address.toLowerCase() !== accountAddress.toLowerCase()) {
+      throw new Error(
+        `Private listing ${order.orderHash ?? ""} is reserved for ${order.taker.address}, not ${accountAddress}`,
+      )
+    }
+    const protocolData = await this.withListingSignature(order, accountAddress)
     const counterOrder = constructPrivateListingCounterOrder(
-      order.protocolData,
+      protocolData,
       order.taker.address,
     )
-    const fulfillments = getPrivateListingFulfillments(order.protocolData)
+    const fulfillments = getPrivateListingFulfillments(protocolData)
 
-    const value = computePrivateListingValue(
-      order.protocolData,
-      order.taker.address,
-    )
+    const value = computePrivateListingValue(protocolData, order.taker.address)
 
     const seaport = getSeaportInstance(
       order.protocolAddress,
@@ -82,7 +85,7 @@ export class FulfillmentManager {
     )
     const transaction = await seaport
       .matchOrders({
-        orders: [order.protocolData, counterOrder],
+        orders: [protocolData, counterOrder],
         fulfillments,
         overrides: {
           ...overrides,
@@ -103,6 +106,52 @@ export class FulfillmentManager {
       "Fulfilling order",
     )
     return transactionReceipt.hash
+  }
+
+  /**
+   * The API omits `protocolData.signature` (null) on the orders it returns, so a
+   * private listing read from it cannot be matched as is. The fulfillment data
+   * endpoint vends the signature to the listing's taker. The vended order must be
+   * this one (same offerer and salt), so a wrong response fails here instead of
+   * as a reverted, paid matchOrders.
+   */
+  private async withListingSignature(
+    order: OrderV2,
+    fulfillerAddress: string,
+  ): Promise<OrderV2["protocolData"]> {
+    if (order.protocolData.signature) {
+      return order.protocolData
+    }
+    if (!order.orderHash) {
+      throw new Error(
+        "Private listing has no signature and no order hash to fetch it with",
+      )
+    }
+    const { fulfillmentData } =
+      await this.context.api.orders.generateFulfillmentData(
+        fulfillerAddress,
+        order.orderHash,
+        order.protocolAddress,
+        OrderSide.LISTING,
+      )
+    const [vended, ...extra] = fulfillmentData.orders
+    if (!vended?.signature) {
+      throw new Error(
+        `OpenSea API returned no signature for private listing ${order.orderHash}`,
+      )
+    }
+    const expected = order.protocolData.parameters
+    if (
+      extra.length > 0 ||
+      vended.parameters?.offerer?.toLowerCase() !==
+        expected.offerer.toLowerCase() ||
+      String(vended.parameters?.salt) !== String(expected.salt)
+    ) {
+      throw new Error(
+        `OpenSea API returned fulfillment data for a different order than private listing ${order.orderHash}`,
+      )
+    }
+    return { ...order.protocolData, signature: vended.signature }
   }
 
   /**

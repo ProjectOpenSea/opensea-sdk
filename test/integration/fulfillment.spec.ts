@@ -1,23 +1,93 @@
 import { ethers } from "ethers"
-import { describe, expect, test } from "vitest"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
+import type { CollectionOffer, Listing, Offer } from "../../src/api/types"
 import { OrderSide } from "../../src/types"
-import { api } from "../utils/liveSdk"
+import { OFFER_AMOUNT } from "../utils/env"
+import {
+  fixtureAsset,
+  getFixtureBalance,
+  getFixtureCollectionSlug,
+  OrderTracker,
+  requireFixtureReady,
+  waitForIndexed,
+} from "../utils/fixture"
+import {
+  FIXTURE_CHAIN,
+  FIXTURE_CONTRACT_ADDRESS,
+  FIXTURE_TOKEN_ID,
+  getBuyerAddress,
+  getSdkForChain,
+  getWalletAddress,
+  hasWallet,
+  LISTING_AMOUNT,
+} from "../utils/setupIntegration"
+import { getRandomExpiration } from "../utils/utils"
 
-describe("Generating fulfillment data", () => {
-  test(`Generate fulfillment data for listing`, async () => {
-    const { listings } = await api.listings.getAllListings(
-      "boredapeyachtclub",
-      1,
-    )
-    const listing = listings?.[0]
+/**
+ * The owner posts a listing, an item offer, and a collection offer on the
+ * fixture; the derived buyer, who holds fixture tokens, is the fulfiller. Only
+ * fulfillment data is generated, nothing is filled, and every order is
+ * cancelled onchain afterwards.
+ */
+describe.skipIf(!hasWallet)("Generating fulfillment data", () => {
+  const tracker = new OrderTracker()
+  let listing: Listing
+  let itemOffer: Offer
+  let collectionOffer: CollectionOffer
 
-    if (!listing?.orderHash) {
-      return
+  beforeAll(async () => {
+    requireFixtureReady()
+    const sdk = getSdkForChain(FIXTURE_CHAIN)
+    const accountAddress = getWalletAddress()
+
+    listing = await sdk.createListing({
+      accountAddress,
+      amount: LISTING_AMOUNT,
+      asset: fixtureAsset(),
+      expirationTime: getRandomExpiration(),
+    })
+    tracker.track(listing)
+
+    itemOffer = await sdk.createOffer({
+      accountAddress,
+      amount: OFFER_AMOUNT,
+      asset: fixtureAsset(),
+      expirationTime: getRandomExpiration(),
+    })
+    tracker.track(itemOffer)
+
+    const created = await sdk.createCollectionOffer({
+      collectionSlug: await getFixtureCollectionSlug(),
+      accountAddress,
+      amount: OFFER_AMOUNT,
+      quantity: 1,
+      expirationTime: getRandomExpiration(),
+    })
+    expect(created, "Collection offer should be created").not.toBeNull()
+    collectionOffer = created!
+    tracker.track(collectionOffer)
+
+    for (const order of [listing, itemOffer, collectionOffer]) {
+      await waitForIndexed(sdk, order, FIXTURE_CHAIN)
     }
 
-    const fulfillment = await api.orders.generateFulfillmentData(
-      ethers.Wallet.createRandom().address,
-      listing.orderHash,
+    const buyerTokens = await getFixtureBalance(sdk, getBuyerAddress())
+    expect(
+      buyerTokens,
+      "Buyer must hold the fixture token it is asked to sell",
+    ).toBeGreaterThan(0n)
+  }, 180_000)
+
+  afterAll(async () => {
+    await tracker.cancelAll(getSdkForChain(FIXTURE_CHAIN), getWalletAddress())
+  }, 120_000)
+
+  test("Generate fulfillment data for listing", async () => {
+    const fulfillment = await getSdkForChain(
+      FIXTURE_CHAIN,
+    ).api.orders.generateFulfillmentData(
+      getBuyerAddress(),
+      listing.orderHash!,
       listing.protocolAddress!,
       OrderSide.LISTING,
     )
@@ -25,66 +95,45 @@ describe("Generating fulfillment data", () => {
     expect(fulfillment.fulfillmentData.orders[0].signature).toBeDefined()
   })
 
-  test(`Generate fulfillment data for offer`, async () => {
-    const { offers } = await api.offers.getAllOffers("boredapeyachtclub", 10)
-    const offer = offers?.find(o => !o.criteria)
-
-    if (!offer?.orderHash) {
-      return
-    }
-
-    const fulfillment = await api.orders.generateFulfillmentData(
-      ethers.Wallet.createRandom().address,
-      offer.orderHash,
-      offer.protocolAddress!,
+  test("Generate fulfillment data for offer", async () => {
+    const fulfillment = await getSdkForChain(
+      FIXTURE_CHAIN,
+    ).api.orders.generateFulfillmentData(
+      getBuyerAddress(),
+      itemOffer.orderHash!,
+      itemOffer.protocolAddress!,
       OrderSide.OFFER,
     )
 
     expect(fulfillment.fulfillmentData.orders[0].signature).toBeDefined()
   })
 
-  test(`Generate fulfillment data for collection offer with consideration parameters`, async () => {
-    // Get a collection offer (criteria offer)
-    const offers = await api.offers.getAllOffers("boredapeyachtclub", 1)
-
-    if (!offers.offers || offers.offers.length === 0) {
-      // Skip if no offers available
-      return
-    }
-
-    // Find a criteria offer (collection or trait offer)
-    const collectionOffer = offers.offers.find(offer => offer.criteria)
-
-    if (!collectionOffer?.orderHash) {
-      // Skip if no collection offers available
-      return
-    }
-
-    try {
-      // Test with consideration parameters for criteria offers
-      const fulfillment = await api.orders.generateFulfillmentData(
+  test("Reject offer fulfillment data for a fulfiller that does not own the item", async () => {
+    await expect(
+      getSdkForChain(FIXTURE_CHAIN).api.orders.generateFulfillmentData(
         ethers.Wallet.createRandom().address,
-        collectionOffer.orderHash,
-        collectionOffer.protocolAddress!,
+        itemOffer.orderHash!,
+        itemOffer.protocolAddress!,
         OrderSide.OFFER,
-        "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", // BAYC contract
-        "1", // Token ID
-      )
+      ),
+    ).rejects.toThrow("Item is not owned by the fulfiller")
+  })
 
-      expect(fulfillment.fulfillmentData.orders[0].signature).toBeDefined()
-      expect(fulfillment.protocol).toBe("seaport")
-    } catch (error) {
-      // Order may no longer be active/valid, or the token may not match
-      // the offer's trait criteria. Skip on expected API errors.
-      if (
-        error instanceof Error &&
-        (error.message.includes("Order not found") ||
-          error.message.includes("does not match") ||
-          error.message.includes("not fulfillable"))
-      ) {
-        return
-      }
-      throw error
-    }
+  test("Generate fulfillment data for collection offer with consideration parameters", async () => {
+    const fulfillment = await getSdkForChain(
+      FIXTURE_CHAIN,
+    ).api.orders.generateFulfillmentData(
+      getBuyerAddress(),
+      collectionOffer.orderHash!,
+      collectionOffer.protocolAddress!,
+      OrderSide.OFFER,
+      FIXTURE_CONTRACT_ADDRESS,
+      FIXTURE_TOKEN_ID,
+    )
+
+    expect(fulfillment.fulfillmentData.orders[0].signature).toBeDefined()
+    // The spec types `protocol` as a free-form string; the API sends the
+    // Seaport version it built the fulfillment for (e.g. "seaport1.6").
+    expect(fulfillment.protocol).toMatch(/^seaport/)
   })
 })

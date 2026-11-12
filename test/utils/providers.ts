@@ -12,6 +12,10 @@ function alchemyProvider(chain: Chain) {
       return new ethers.JsonRpcProvider(
         `https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       )
+    case Chain.Base:
+      return new ethers.JsonRpcProvider(
+        `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
+      )
     case Chain.Polygon:
       return new ethers.JsonRpcProvider(
         `https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,

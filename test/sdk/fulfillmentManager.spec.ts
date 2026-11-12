@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from "vitest"
 import { DEFAULT_SEAPORT_CONTRACT_ADDRESS } from "../../src/orders/utils"
 import { FulfillmentManager } from "../../src/sdk/fulfillment"
-import { Chain, EventType } from "../../src/types"
+import { Chain, EventType, OrderSide } from "../../src/types"
 import { createMockContext } from "../fixtures/context"
 import { mockListing, mockListingPartiallyFilled } from "../fixtures/listings"
 import {
@@ -416,6 +416,186 @@ describe("SDK: FulfillmentManager", () => {
       expect(mockSeaport.matchOrders).toHaveBeenCalledTimes(1)
       expect(mockSeaport.fulfillOrder).not.toHaveBeenCalled()
       expect(result).toBe("0xTxHash")
+    })
+
+    const vendedFor = (
+      parameters: typeof mockPrivateListingOrderV2.protocolData.parameters,
+      overrides: Record<string, unknown> = {},
+    ) => ({
+      fulfillmentData: {
+        orders: [
+          {
+            parameters: { offerer: parameters.offerer, salt: parameters.salt },
+            signature: "0xNewSignature",
+            ...overrides,
+          },
+        ],
+      },
+    })
+
+    const unsignedPrivateListing = () => ({
+      ...mockPrivateListingOrderV2,
+      protocolData: {
+        ...mockPrivateListingOrderV2.protocolData,
+        signature: null as unknown as string,
+      },
+    })
+
+    test("refuses to fulfill a private listing reserved for another taker", async () => {
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: unsignedPrivateListing(),
+          accountAddress: "0xSomeoneElse",
+        }),
+      ).rejects.toThrow(/is reserved for 0xPrivateBuyer, not 0xSomeoneElse/)
+      expect(mockAPI.orders.generateFulfillmentData).not.toHaveBeenCalled()
+      expect(mockSeaport.matchOrders).not.toHaveBeenCalled()
+    })
+
+    test("matches the taker address case-insensitively", async () => {
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue(
+        vendedFor(mockPrivateListingOrderV2.protocolData.parameters),
+      )
+      await fulfillmentManager.fulfillPrivateOrder({
+        order: unsignedPrivateListing(),
+        accountAddress: "0xPRIVATEBUYER",
+      })
+      expect(mockSeaport.matchOrders).toHaveBeenCalledTimes(1)
+    })
+
+    test("rejects a vended signature for an order with a different salt", async () => {
+      const parameters = mockPrivateListingOrderV2.protocolData.parameters
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
+        fulfillmentData: {
+          orders: [
+            {
+              parameters: {
+                offerer: parameters.offerer,
+                salt: `${parameters.salt}1`,
+              },
+              signature: "0xNewSignature",
+            },
+          ],
+        },
+      })
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: unsignedPrivateListing(),
+          accountAddress: "0xPrivateBuyer",
+        }),
+      ).rejects.toThrow("fulfillment data for a different order")
+      expect(mockSeaport.matchOrders).not.toHaveBeenCalled()
+    })
+
+    test("rejects a vended signature for an order with a different offerer", async () => {
+      const parameters = mockPrivateListingOrderV2.protocolData.parameters
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
+        fulfillmentData: {
+          orders: [
+            {
+              parameters: { offerer: "0xNotTheOfferer", salt: parameters.salt },
+              signature: "0xNewSignature",
+            },
+          ],
+        },
+      })
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: unsignedPrivateListing(),
+          accountAddress: "0xPrivateBuyer",
+        }),
+      ).rejects.toThrow("fulfillment data for a different order")
+      expect(mockSeaport.matchOrders).not.toHaveBeenCalled()
+    })
+
+    test("rejects fulfillment data that vends more than one order", async () => {
+      const vended = vendedFor(
+        mockPrivateListingOrderV2.protocolData.parameters,
+      )
+      vended.fulfillmentData.orders.push(vended.fulfillmentData.orders[0])
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue(vended)
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: unsignedPrivateListing(),
+          accountAddress: "0xPrivateBuyer",
+        }),
+      ).rejects.toThrow("fulfillment data for a different order")
+      expect(mockSeaport.matchOrders).not.toHaveBeenCalled()
+    })
+
+    test("fetches the signature of a private listing the API returned without one", async () => {
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue(
+        vendedFor(mockPrivateListingOrderV2.protocolData.parameters),
+      )
+      const unsigned = {
+        ...mockPrivateListingOrderV2,
+        protocolData: {
+          ...mockPrivateListingOrderV2.protocolData,
+          signature: null as unknown as string,
+        },
+      }
+
+      await fulfillmentManager.fulfillPrivateOrder({
+        order: unsigned,
+        accountAddress: "0xPrivateBuyer",
+      })
+
+      expect(mockAPI.orders.generateFulfillmentData).toHaveBeenCalledWith(
+        "0xPrivateBuyer",
+        unsigned.orderHash,
+        unsigned.protocolAddress,
+        OrderSide.LISTING,
+      )
+      const [{ orders }] = mockSeaport.matchOrders.mock.calls[0]
+      expect(orders[0].signature).toBe("0xNewSignature")
+    })
+
+    test("uses a private listing's own signature without asking the API", async () => {
+      await fulfillmentManager.fulfillPrivateOrder({
+        order: mockPrivateListingOrderV2,
+        accountAddress: "0xPrivateBuyer",
+      })
+
+      expect(mockAPI.orders.generateFulfillmentData).not.toHaveBeenCalled()
+      const [{ orders }] = mockSeaport.matchOrders.mock.calls[0]
+      expect(orders[0].signature).toBe("0xSignature")
+    })
+
+    test("throws when the API vends no signature for an unsigned private listing", async () => {
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
+        fulfillmentData: { orders: [{ signature: null }] },
+      })
+
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: {
+            ...mockPrivateListingOrderV2,
+            protocolData: {
+              ...mockPrivateListingOrderV2.protocolData,
+              signature: null as unknown as string,
+            },
+          },
+          accountAddress: "0xPrivateBuyer",
+        }),
+      ).rejects.toThrow("returned no signature for private listing")
+      expect(mockSeaport.matchOrders).not.toHaveBeenCalled()
+    })
+
+    test("throws when an unsigned private listing has no order hash", async () => {
+      await expect(
+        fulfillmentManager.fulfillPrivateOrder({
+          order: {
+            ...mockPrivateListingOrderV2,
+            orderHash: null,
+            protocolData: {
+              ...mockPrivateListingOrderV2.protocolData,
+              signature: null as unknown as string,
+            },
+          },
+          accountAddress: "0xPrivateBuyer",
+        }),
+      ).rejects.toThrow("no order hash")
+      expect(mockAPI.orders.generateFulfillmentData).not.toHaveBeenCalled()
     })
 
     test("throws when account is not available", async () => {

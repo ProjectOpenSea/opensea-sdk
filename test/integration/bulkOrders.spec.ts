@@ -1,7 +1,7 @@
-import { describe, expect, test } from "vitest"
-import { Chain } from "../../src/types"
+import { formatEther, parseEther } from "ethers"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { OFFER_AMOUNT } from "../utils/env"
-import { ensureVarsOrSkip } from "../utils/runtime"
+import { OrderTracker, requireFixtureReady } from "../utils/fixture"
 import {
   CREATE_LISTING_3_CHAIN,
   CREATE_LISTING_3_CONTRACT_ADDRESS,
@@ -10,29 +10,25 @@ import {
   CREATE_LISTING_CONTRACT_ADDRESS,
   CREATE_LISTING_TOKEN_ID,
   getSdkForChain,
+  getWalletAddress,
+  hasWallet,
   LISTING_AMOUNT,
-  requireIntegrationEnv,
-  walletAddress,
 } from "../utils/setupIntegration"
 import { expectValidOrder, getRandomExpiration } from "../utils/utils"
 
-describe("SDK: bulk order posting", () => {
-  beforeEach(() => {
-    requireIntegrationEnv()
-  })
+describe.skipIf(!hasWallet)("SDK: bulk order posting", () => {
+  const tracker = new OrderTracker()
 
-  test("Post Bulk Offers - Mainnet", async function () {
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-        CREATE_LISTING_3_CONTRACT_ADDRESS,
-        CREATE_LISTING_3_TOKEN_ID,
-      })
-    ) {
-      return
-    }
+  beforeAll(requireFixtureReady)
 
+  afterAll(async () => {
+    await tracker.cancelAll(
+      getSdkForChain(CREATE_LISTING_CHAIN),
+      getWalletAddress(),
+    )
+  }, 180_000)
+
+  test("Post Bulk Offers", async () => {
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
     // Both NFTs must be on the same chain to test cross-collection bulk
     // orders on a single chain
@@ -42,19 +38,19 @@ describe("SDK: bulk order posting", () => {
       )
     }
 
-    const chain = Chain.Mainnet
+    const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
 
     const expirationTime = getRandomExpiration()
 
-    // Create multiple offers across different collections on mainnet
+    // Offers on two distinct items on the same chain
     const offers = [
       {
         asset: {
           tokenAddress: CREATE_LISTING_CONTRACT_ADDRESS as string,
           tokenId: CREATE_LISTING_TOKEN_ID as string,
         },
-        amount: +OFFER_AMOUNT / 2,
+        amount: +OFFER_AMOUNT,
         expirationTime,
       },
       {
@@ -62,7 +58,7 @@ describe("SDK: bulk order posting", () => {
           tokenAddress: CREATE_LISTING_3_CONTRACT_ADDRESS as string,
           tokenId: CREATE_LISTING_3_TOKEN_ID as string,
         },
-        amount: +OFFER_AMOUNT / 2,
+        amount: +OFFER_AMOUNT,
         expirationTime,
       },
     ]
@@ -71,12 +67,15 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkOffers({
       offers,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
       continueOnError: false, // Fail if any order fails
       onProgress: (completed, total) => {
         console.log(`Progress: ${completed}/${total} offers submitted`)
       },
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     // Verify all orders were created successfully
     expect(result.successful).toHaveLength(offers.length)
@@ -96,26 +95,16 @@ describe("SDK: bulk order posting", () => {
         expirationTime,
       )
       expect(order.protocolData!.parameters.offerer.toLowerCase()).toBe(
-        walletAddress.toLowerCase(),
+        getWalletAddress().toLowerCase(),
       )
     })
 
     console.log("✓ All bulk offers created and validated successfully")
   })
 
-  test("Post Bulk Offers with continueOnError - Mainnet", async function () {
+  test("Post Bulk Offers with continueOnError", async () => {
     // This test validates the continueOnError mechanism by creating offers where
     // one has parameters that may fail API validation (dust amount)
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-        CREATE_LISTING_3_CONTRACT_ADDRESS,
-        CREATE_LISTING_3_TOKEN_ID,
-      })
-    ) {
-      return
-    }
 
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
     if (CREATE_LISTING_3_CHAIN !== CREATE_LISTING_CHAIN) {
@@ -124,7 +113,7 @@ describe("SDK: bulk order posting", () => {
       )
     }
 
-    const chain = Chain.Mainnet
+    const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
 
     const expirationTime = getRandomExpiration()
@@ -155,12 +144,15 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkOffers({
       offers,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
       continueOnError: true, // Continue even if some orders fail
       onProgress: (completed, total) => {
         console.log(`Progress: ${completed}/${total} offers processed`)
       },
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     console.log(`Successful: ${result.successful.length}`)
     console.log(`Failed: ${result.failed.length}`)
@@ -204,18 +196,7 @@ describe("SDK: bulk order posting", () => {
     )
   })
 
-  test("Post Bulk Listings", async function () {
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-        CREATE_LISTING_3_CONTRACT_ADDRESS,
-        CREATE_LISTING_3_TOKEN_ID,
-      })
-    ) {
-      return
-    }
-
+  test("Post Bulk Listings", async () => {
     const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
 
@@ -254,12 +235,15 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkListings({
       listings,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
       continueOnError: false,
       onProgress: (completed, total) => {
         console.log(`Progress: ${completed}/${total} listings submitted`)
       },
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     // Verify all orders were created successfully
     expect(result.successful).toHaveLength(listings.length)
@@ -279,26 +263,16 @@ describe("SDK: bulk order posting", () => {
         expirationTime,
       )
       expect(order.protocolData!.parameters.offerer.toLowerCase()).toBe(
-        walletAddress.toLowerCase(),
+        getWalletAddress().toLowerCase(),
       )
     })
 
     console.log("✓ All bulk listings created and validated successfully")
   })
 
-  test("Post Bulk Listings with different prices and parameters", async function () {
+  test("Post Bulk Listings with different prices and parameters", async () => {
     // CREATE_LISTING and CREATE_LISTING_3 must be on the same chain (CREATE_LISTING_CHAIN)
     // to test cross-collection bulk orders on a single chain
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-        CREATE_LISTING_3_CONTRACT_ADDRESS,
-        CREATE_LISTING_3_TOKEN_ID,
-      })
-    ) {
-      return
-    }
 
     const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
@@ -335,7 +309,9 @@ describe("SDK: bulk order posting", () => {
           tokenAddress: CREATE_LISTING_3_CONTRACT_ADDRESS as string,
           tokenId: CREATE_LISTING_3_TOKEN_ID as string,
         },
-        amount: String(+LISTING_AMOUNT * 1.5), // Different price
+        // Different price. formatEther avoids float artifacts such as
+        // 0.000015000000000000002, which parseEther rejects.
+        amount: formatEther((parseEther(LISTING_AMOUNT) * 3n) / 2n),
         expirationTime: expirationTime2, // Different expiration
         includeOptionalCreatorFees: true, // Include optional fees
       },
@@ -347,12 +323,15 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkListings({
       listings,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
       continueOnError: false,
       onProgress: (completed, total) => {
         console.log(`Progress: ${completed}/${total} listings submitted`)
       },
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     expect(result.successful).toHaveLength(listings.length)
     expect(result.failed).toHaveLength(0)
@@ -372,16 +351,7 @@ describe("SDK: bulk order posting", () => {
     )
   })
 
-  test("Post Single Listing via Bulk API - uses normal signature", async function () {
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-      })
-    ) {
-      return
-    }
-
+  test("Post Single Listing via Bulk API - uses normal signature", async () => {
     const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
 
@@ -405,8 +375,11 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkListings({
       listings,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     expect(result.successful).toHaveLength(1)
     expect(result.failed).toHaveLength(0)
@@ -434,18 +407,7 @@ describe("SDK: bulk order posting", () => {
     console.log("✓ Single listing via bulk API uses optimized normal signature")
   })
 
-  test("Verify bulk signature structure and merkle proofs", async function () {
-    if (
-      !ensureVarsOrSkip(this, {
-        CREATE_LISTING_CONTRACT_ADDRESS,
-        CREATE_LISTING_TOKEN_ID,
-        CREATE_LISTING_3_CONTRACT_ADDRESS,
-        CREATE_LISTING_3_TOKEN_ID,
-      })
-    ) {
-      return
-    }
-
+  test("Verify bulk signature structure and merkle proofs", async () => {
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
     // Both NFTs must be on the same chain to test cross-collection bulk
     // orders on a single chain
@@ -455,7 +417,7 @@ describe("SDK: bulk order posting", () => {
       )
     }
 
-    const chain = Chain.Mainnet
+    const chain = CREATE_LISTING_CHAIN
     const sdk = getSdkForChain(chain)
 
     // Create 2 offers
@@ -466,6 +428,7 @@ describe("SDK: bulk order posting", () => {
           tokenId: CREATE_LISTING_TOKEN_ID as string,
         },
         amount: +OFFER_AMOUNT,
+        expirationTime: getRandomExpiration(),
       },
       {
         asset: {
@@ -473,6 +436,7 @@ describe("SDK: bulk order posting", () => {
           tokenId: CREATE_LISTING_3_TOKEN_ID as string,
         },
         amount: +OFFER_AMOUNT,
+        expirationTime: getRandomExpiration(),
       },
     ]
 
@@ -482,9 +446,12 @@ describe("SDK: bulk order posting", () => {
 
     const result = await sdk.createBulkOffers({
       offers,
-      accountAddress: walletAddress,
+      accountAddress: getWalletAddress(),
       continueOnError: false,
     })
+    for (const order of result.successful) {
+      tracker.track(order)
+    }
 
     expect(result.successful).toHaveLength(offers.length)
 
