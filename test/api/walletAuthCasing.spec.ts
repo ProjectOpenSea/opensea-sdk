@@ -8,8 +8,8 @@ import { readOpenApiSpec } from "../utils/openapiSpec"
  * Request-body casing for wallet-auth writes.
  *
  * `Fetcher.request` snake_cases every body by default, because most of the API
- * takes snake_case JSON. A handful of endpoints don't — their OpenAPI schemas
- * declare camelCase properties — and for those the default silently corrupts
+ * takes snake_case JSON. A handful of endpoints don't (their OpenAPI schemas
+ * declare camelCase properties), and for those the default silently corrupts
  * the request. Where the camelCase field is required the call fails outright;
  * where it's optional the server returns 200 and quietly ignores it, which is
  * the worse failure because nothing surfaces.
@@ -20,12 +20,12 @@ import { readOpenApiSpec } from "../utils/openapiSpec"
 
 /** Operations whose request body is camelCase on the wire, per the OpenAPI spec. */
 const KNOWN_CAMELCASE_OPERATIONS = [
-  // Seaport-shaped bodies — opted out in api/orders.ts and api/offers.ts.
+  // Seaport-shaped bodies, opted out in api/orders.ts and api/offers.ts.
   "build_offer_v2",
   "post_criteria_offer_v2",
   "post_listing",
   "post_offer",
-  // WalletAuthAPI — opted out below, covered by the behavioural tests here.
+  // WalletAuthAPI, opted out below and covered by the behavioural tests here.
   // `link_wallet_with_siwx` has two senders: auth/siwx.ts posts it with a raw
   // fetch + JSON.stringify, which never snake_cases, and WalletAuthAPI posts it
   // through Fetcher, which needs the explicit opt-out to put the same bytes on
@@ -165,7 +165,7 @@ describe("wallet-auth request body casing", () => {
 
   it("sends update_profile_settings verbatim so displayName is not dropped", async () => {
     // Every field here is optional, so snake-casing returned 200 while silently
-    // discarding everything except `bio` — a single word with no casing to
+    // discarding everything except `bio`, a single word with no casing to
     // mangle. That made the bug invisible from the response.
     await api.updateProfileSettings({
       displayName: "scopecreep",
@@ -265,7 +265,7 @@ describe("wallet-auth request body casing", () => {
 
   it("flags any new camelCase request body so its casing gets a decision", () => {
     // Tripwire: this list is the set of endpoints known to need verbatim bodies.
-    // A new one appearing here means the default snake_casing would corrupt it —
+    // A new one here means the default snake_casing would corrupt it:
     // handle it explicitly, then add it to KNOWN_CAMELCASE_OPERATIONS.
     // The flat public mirror may temporarily install the previously published
     // api-types while a new spec version is being released, so compare only

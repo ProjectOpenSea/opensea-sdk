@@ -96,7 +96,7 @@ export class OrdersAPI {
    * The body uses mixed casing per the OpenSea OpenAPI spec: the outer
    * envelope (`protocol_address`) is snake_case, but the inner Seaport
    * struct (`parameters.startTime`, `parameters.orderType`, `offer[].itemType`,
-   * etc.) mirrors the on-chain struct names and must stay camelCase on the
+   * etc.) mirrors the onchain struct names and must stay camelCase on the
    * wire. We pass `snakeizeBody: false` and emit the body in exact wire shape.
    */
   async postListing(

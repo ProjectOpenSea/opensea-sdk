@@ -34,8 +34,8 @@ describe("SDK: bulk order posting", () => {
     }
 
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
-    // NOTE: This test requires both NFTs to be on the same chain to demonstrate
-    // cross-collection bulk orders on a single chain
+    // Both NFTs must be on the same chain to test cross-collection bulk
+    // orders on a single chain
     if (CREATE_LISTING_3_CHAIN !== CREATE_LISTING_CHAIN) {
       throw new Error(
         `CREATE_LISTING_3 must be on the same chain as CREATE_LISTING (${CREATE_LISTING_CHAIN}), but got ${CREATE_LISTING_3_CHAIN}`,
@@ -220,8 +220,8 @@ describe("SDK: bulk order posting", () => {
     const sdk = getSdkForChain(chain)
 
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
-    // NOTE: This test requires both NFTs to be on the same chain to demonstrate
-    // cross-collection bulk orders on a single chain
+    // Both NFTs must be on the same chain to test cross-collection bulk
+    // orders on a single chain
     if (CREATE_LISTING_3_CHAIN !== CREATE_LISTING_CHAIN) {
       throw new Error(
         `CREATE_LISTING_3 must be on the same chain as CREATE_LISTING (${CREATE_LISTING_CHAIN}), but got ${CREATE_LISTING_3_CHAIN}`,
@@ -287,7 +287,7 @@ describe("SDK: bulk order posting", () => {
   })
 
   test("Post Bulk Listings with different prices and parameters", async function () {
-    // NOTE: CREATE_LISTING and CREATE_LISTING_3 must be on the same chain (CREATE_LISTING_CHAIN)
+    // CREATE_LISTING and CREATE_LISTING_3 must be on the same chain (CREATE_LISTING_CHAIN)
     // to test cross-collection bulk orders on a single chain
     if (
       !ensureVarsOrSkip(this, {
@@ -304,8 +304,8 @@ describe("SDK: bulk order posting", () => {
     const sdk = getSdkForChain(chain)
 
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
-    // NOTE: This test requires both NFTs to be on the same chain to demonstrate
-    // cross-collection bulk orders on a single chain
+    // Both NFTs must be on the same chain to test cross-collection bulk
+    // orders on a single chain
     if (CREATE_LISTING_3_CHAIN !== CREATE_LISTING_CHAIN) {
       throw new Error(
         `CREATE_LISTING_3 must be on the same chain as CREATE_LISTING (${CREATE_LISTING_CHAIN}), but got ${CREATE_LISTING_3_CHAIN}`,
@@ -447,8 +447,8 @@ describe("SDK: bulk order posting", () => {
     }
 
     // Verify CREATE_LISTING_3 is on the same chain as CREATE_LISTING
-    // NOTE: This test requires both NFTs to be on the same chain to demonstrate
-    // cross-collection bulk orders on a single chain
+    // Both NFTs must be on the same chain to test cross-collection bulk
+    // orders on a single chain
     if (CREATE_LISTING_3_CHAIN !== CREATE_LISTING_CHAIN) {
       throw new Error(
         `CREATE_LISTING_3 must be on the same chain as CREATE_LISTING (${CREATE_LISTING_CHAIN}), but got ${CREATE_LISTING_3_CHAIN}`,

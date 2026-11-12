@@ -90,7 +90,7 @@ export type Price = Camelize<ApiPrice>
  * specified trait.
  *
  * Distinct from {@link TraitCriteria} (`{type, value}`) which is the offer-
- * creation shape — the wire format differs across endpoints.
+ * creation shape. The wire format differs across endpoints.
  *
  * @category API Query Args
  */
@@ -137,7 +137,7 @@ export type BuildOfferResponse = Camelize<ApiBuildOfferResponse>
 
 /**
  * Criteria returned by the build offer endpoint. Subset of the wire-format
- * criteria — only collection and trait fields.
+ * criteria: only collection and trait fields.
  * @category API Response Types
  */
 export type BuildOfferCriteria = {
@@ -221,7 +221,7 @@ export enum OrderStatus {
 }
 
 /**
- * Base Order shape — camelized from `@opensea/api-types`, with `protocolData`
+ * Base Order shape, camelized from `@opensea/api-types`, with `protocolData`
  * narrowed to the seaport-js `OrderWithCounter` type (a.k.a. {@link ProtocolData})
  * since SDK callers pass this directly to Seaport.
  * @category API Models
@@ -242,7 +242,7 @@ export type Offer = Camelize<Omit<ApiOffer, "protocol_data" | "status">> & {
 }
 
 /**
- * Collection Offer type — an {@link Offer} with `criteria` guaranteed present.
+ * Collection offer: an {@link Offer} with `criteria` always present.
  * @category API Models
  */
 export type CollectionOffer = Offer & {
@@ -432,7 +432,7 @@ export type NFT = Camelize<NftDetailed>
 
 /**
  * Trait type returned by OpenSea API. Sourced from api-types `Trait`.
- * For numeric traits, `value` arrives as a string — callers parse as needed.
+ * For numeric traits, `value` arrives as a string; callers parse as needed.
  * @category API Models
  */
 export type Trait = Camelize<ApiTrait>
@@ -1288,7 +1288,7 @@ import type {
   WalletPnlResponse as ApiWalletPnlResponse,
 } from "@opensea/api-types"
 
-// Request types — camelized consumer view. The fetcher snakeizes the body on
+// Request types, camelized for consumers. The fetcher snakeizes the body on
 // the way out (see `api.ts`), so passing camelCase here hits the API correctly.
 export type BatchCollectionsRequest = Camelize<ApiBatchCollectionsRequest>
 export type BatchNftsRequest = Camelize<ApiBatchNftsRequest>
@@ -1310,7 +1310,7 @@ export type FulfillerObject = Camelize<ApiFulfillerObject>
 export type ListingObject = Camelize<ApiListingObject>
 export type TransferRequest = Camelize<ApiTransferRequest>
 
-// Response types — camelized for the consumer view.
+// Response types, camelized for consumers.
 export type CollectionBatchResponse = Camelize<ApiCollectionBatchResponse>
 export type CollectionHoldersPaginatedResponse =
   Camelize<ApiCollectionHoldersPaginatedResponse>
@@ -1418,7 +1418,7 @@ export interface PaginatedAnalyticsArgs {
 }
 
 /**
- * Query args for the collection holders endpoint — adds optional `owned_by`
+ * Query args for the collection holders endpoint. Adds an optional `owned_by`
  * filter on top of {@link PaginatedAnalyticsArgs}.
  * @category API Query Args
  */
@@ -1719,7 +1719,7 @@ export interface ProfileCollectionsArgs {
 }
 
 /**
- * Response from the account favorites endpoint — favorited NFTs.
+ * Response from the account favorites endpoint (favorited NFTs).
  * @category API Response Types
  */
 export type ProfileFavoritesResponse = Camelize<NftListResponse>

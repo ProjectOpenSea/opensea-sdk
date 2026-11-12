@@ -72,7 +72,7 @@ describe("Generating fulfillment data", () => {
       expect(fulfillment.protocol).toBe("seaport")
     } catch (error) {
       // Order may no longer be active/valid, or the token may not match
-      // the offer's trait criteria — skip test for expected API errors
+      // the offer's trait criteria. Skip on expected API errors.
       if (
         error instanceof Error &&
         (error.message.includes("Order not found") ||

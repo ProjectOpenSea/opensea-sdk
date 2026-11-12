@@ -104,7 +104,7 @@ describe("getErc20Payment: captured fulfillment_data responses", () => {
   test("camelizing the response leaves the Seaport struct keys alone", () => {
     // The fetcher camelizes every response. The Seaport structs inside
     // `input_data` are already camelCase, so the transform has to be a no-op
-    // there — the SDK re-ABI-encodes the call from exactly these keys.
+    // there: the SDK re-ABI-encodes the call from exactly these keys.
     for (const { name, fixture } of REAL_PAYLOADS) {
       const raw = fixture.response.fulfillment_data.transaction.input_data
       const camelized = preflightInput(fixture) as Record<string, unknown>

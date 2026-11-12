@@ -7,42 +7,41 @@ order: 1
 hidden: false
 ---
 
-> 📖 **For a complete reference of all SDK methods with detailed parameters and return types, see the [API Reference](api-reference.md).**
+For every method's parameters and return types, see the [API reference](api-reference.md).
 
 - [Fetching NFTs](#fetching-nfts)
-  - [Checking Balances and Ownerships](#checking-balances-and-ownerships)
-- [Making Offers](#making-offers)
-  - [Offer Limits](#offer-limits)
-- [Making Listings / Selling Items](#making-listings--selling-items)
-  - [Creating Collection and Trait Offers](#creating-collection-and-trait-offers)
-- [Fetching Orders](#fetching-orders)
-  - [Fetching an Order by Hash](#fetching-an-order-by-hash)
-  - [Fetching All Offers and Listings for a Collection](#fetching-all-offers-and-listings-for-a-collection)
-  - [Fetching Best Offers and Best Listings for an NFT](#fetching-best-offers-and-best-listings-for-an-nft)
-- [Fetching Events](#fetching-events)
-  - [Get All Events](#get-all-events)
-  - [Get Events by Account](#get-events-by-account)
-  - [Get Events by Collection](#get-events-by-collection)
-  - [Get Events by NFT](#get-events-by-nft)
-- [Buying Items](#buying-items)
-- [Accepting Offers](#accepting-offers)
+  - [Checking balances and ownership](#checking-balances-and-ownership)
+- [Making offers](#making-offers)
+- [Making listings](#making-listings)
+  - [Collection and trait offers](#collection-and-trait-offers)
+- [Fetching orders](#fetching-orders)
+  - [Fetching an order by hash](#fetching-an-order-by-hash)
+  - [Best offer and best listing for an NFT](#best-offer-and-best-listing-for-an-nft)
+- [Fetching events](#fetching-events)
+  - [Events by account](#events-by-account)
+  - [Events by collection](#events-by-collection)
+  - [Events by NFT](#events-by-nft)
+  - [Event fields](#event-fields)
+  - [Pagination](#pagination)
+- [Buying items](#buying-items)
+- [Accepting offers](#accepting-offers)
 
 ## Fetching NFTs
 
-Fetch a single NFT by contract address and token ID:
+Fetch one NFT by contract address and token ID:
 
 ```typescript
 const { nft } = await openseaSDK.api.nfts.getNFT(tokenAddress, tokenId);
 ```
 
-**Additional NFT Methods:**
+Other NFT methods on `openseaSDK.api.nfts`:
 
-- `getNFTsByCollection(collectionSlug, limit?, next?, traits?)` - Get all NFTs in a collection (`traits` is an array of `{ traitType, value }` for server-side filtering — multiple entries are AND-combined)
-- `getNFTsByContract(contractAddress, limit?, next?, chain?)` - Get all NFTs for a contract
-- `getNFTsByAccount(accountAddress, limit?, next?, chain?, options?)` - Get all NFTs owned by an account (`options.includeAutoHidden` also returns NFTs auto-hidden because a third party minted or sent them; NFTs the holder hid themselves are still excluded)
-- `getContract(contractAddress, chain?)` - Get contract information
+- `getNFTsByCollection(collectionSlug, limit?, next?, traits?)` lists a collection's NFTs. `traits` is an array of `{ traitType, value }` filters, applied server-side and AND-combined.
+- `getNFTsByContract(contractAddress, limit?, next?, chain?)` lists a contract's NFTs.
+- `getNFTsByAccount(accountAddress, limit?, next?, chain?, options?)` lists NFTs an account owns. Set `options.includeAutoHidden` to also return NFTs hidden automatically because a third party minted or sent them. NFTs the holder hid themselves stay excluded.
+- `getContract(contractAddress, chain?)` returns contract details.
 
-### Checking Balances and Ownerships
+### Checking balances and ownership
 
 ```typescript
 import { TokenStandard } from "@opensea/sdk";
@@ -83,17 +82,15 @@ const offer = await openseaSDK.createOffer({
 });
 ```
 
-When you make an offer on an item owned by an OpenSea user, **that user will automatically get an email notifying them with the offer amount**, if it's above their desired threshold.
+If the owner is an OpenSea user, they get an email with the offer amount when it's above their notification threshold.
 
-**Creating Multiple Offers:** To create multiple offers efficiently with a single signature, see [Bulk Order Creation](advanced-use-cases.md#bulk-order-creation) in the Advanced Use Cases guide.
+The total value of your open offers can't exceed 1000x your wallet balance.
 
-### Offer Limits
+To create several offers with one signature, see [bulk order creation](advanced-use-cases.md#bulk-order-creation).
 
-Note: The total value of offers must not exceed 1000x wallet balance.
+## Making listings
 
-## Making Listings / Selling Items
-
-To sell an asset, call `createListing`:
+To sell an item, call `createListing`:
 
 ```typescript
 import { getUnixTimestampInSeconds, TimeInSeconds } from "@opensea/sdk";
@@ -112,17 +109,13 @@ const listing = await openseaSDK.createListing({
 });
 ```
 
-The units for `amount` are in ETH.
+`amount` is in units of the payment token, which the SDK picks for you. It uses the collection's configured pricing currency when there is one, and otherwise the chain default: usually the native token (ETH on Ethereum) for listings and the wrapped native token (WETH) for offers.
 
-> **Note on Payment Tokens**: The SDK automatically determines the correct payment token for each order. If a collection has configured pricing currencies, those are used. Otherwise, the SDK falls back to chain defaults (typically the native token like ETH for listings and the wrapped native token like WETH for offers).
+To create several listings with one signature, see [bulk order creation](advanced-use-cases.md#bulk-order-creation).
 
-**Creating Multiple Listings:** To create multiple listings efficiently with a single signature, see [Bulk Order Creation](advanced-use-cases.md#bulk-order-creation) in the Advanced Use Cases guide.
+### Collection and trait offers
 
-### Creating Collection and Trait Offers
-
-Collection offers and trait offers are supported with `openseaSDK.createCollectionOffer()`.
-
-For **collection offers**, provide the collection slug:
+`openseaSDK.createCollectionOffer()` creates both. For a collection offer, pass the collection slug:
 
 ```typescript
 const collection = await openseaSDK.api.collections.getCollection("cool-cats-nft");
@@ -134,7 +127,7 @@ const offer = await openseaSDK.createCollectionOffer({
 });
 ```
 
-For **single-trait offers**, include `traitType` as the trait name and `traitValue` as the required value:
+For a single-trait offer, add `traitType` (the trait name) and `traitValue`:
 
 ```typescript
 const offer = await openseaSDK.createCollectionOffer({
@@ -147,7 +140,7 @@ const offer = await openseaSDK.createCollectionOffer({
 });
 ```
 
-For **multi-trait offers**, use the `traits` array:
+For several traits, use the `traits` array:
 
 ```typescript
 const offer = await openseaSDK.createCollectionOffer({
@@ -162,7 +155,7 @@ const offer = await openseaSDK.createCollectionOffer({
 });
 ```
 
-For **numeric trait offers**, use the `numericTraits` array with min/max ranges:
+For numeric traits, use `numericTraits` with min/max ranges:
 
 ```typescript
 const offer = await openseaSDK.createCollectionOffer({
@@ -174,9 +167,9 @@ const offer = await openseaSDK.createCollectionOffer({
 });
 ```
 
-## Fetching Orders
+## Fetching orders
 
-To retrieve offers and listings, use the collection-based or item-specific endpoints:
+Offers and listings can be fetched per collection or per NFT. `getAllOffers` and `getAllListings` paginate with `limit` and `next`.
 
 ```typescript
 import { type NFT } from "@opensea/sdk";
@@ -202,11 +195,11 @@ const bestListing = await openseaSDK.api.listings.getBestListing(
 );
 ```
 
-Note that the listing price of an asset is equal to the `currentPrice` of the **lowest listing** on the asset. Users can lower their listing price without invalidating previous listings, so all get shipped down until they're canceled or one is fulfilled.
+An item's price is its lowest active listing. Lowering a price doesn't cancel the earlier, higher listings: they all stay active until they're canceled or one of them is filled.
 
-### Fetching an Order by Hash
+### Fetching an order by hash
 
-If you have an order hash, you can fetch the full order details directly:
+With an order hash, fetch the full order, for example to cancel or fulfill it:
 
 ```typescript
 const order = await openseaSDK.api.orders.getOrderByHash(
@@ -215,25 +208,9 @@ const order = await openseaSDK.api.orders.getOrderByHash(
 );
 ```
 
-This is useful when you need to retrieve order details for operations like order cancellation or fulfillment when you only have the order hash.
+### Best offer and best listing for an NFT
 
-### Fetching All Offers and Listings for a Collection
-
-There are dedicated methods that return all offers and listings for a given collection:
-
-```typescript
-// Get all offers for a collection
-const { offers } = await openseaSDK.api.offers.getAllOffers("boredapeyachtclub");
-
-// Get all listings for a collection
-const { listings } = await openseaSDK.api.listings.getAllListings("boredapeyachtclub");
-```
-
-Both methods support pagination with `limit` and `next` parameters.
-
-### Fetching Best Offers and Best Listings for an NFT
-
-Get the best (highest offer / lowest listing) for a specific NFT:
+Get the highest offer or lowest listing on one NFT:
 
 ```typescript
 // Get best offer for an NFT
@@ -243,40 +220,25 @@ const offer = await openseaSDK.api.offers.getBestOffer("boredapeyachtclub", "1")
 const listing = await openseaSDK.api.listings.getBestListing("boredapeyachtclub", "1");
 ```
 
-## Fetching Events
+## Fetching events
 
-The SDK provides methods to retrieve historical events for NFTs, collections, and accounts. Events include sales, transfers, listings, offers, and cancellations.
-
-### Get All Events
-
-Fetch all events with optional filters:
+Historical events (sales, transfers, mints, listings, and offers) can be fetched globally or by account, collection, or NFT. Every filter is optional:
 
 ```typescript
 import { AssetEventType } from "@opensea/sdk";
 
 const { assetEvents, next } = await openseaSDK.api.events.getEvents({
   eventType: AssetEventType.SALE, // Optional: filter by event type
-  limit: 50, // Optional: limit results (default: 50)
+  limit: 50, // Optional: results per page, 1 to 200
   after: 1672531200, // Optional: filter events after timestamp
   before: 1675209600, // Optional: filter events before timestamp
-  chain: "ethereum", // Optional: filter by chain
   next: "cursor", // Optional: cursor for pagination
 });
 ```
 
-**Event Types:**
+`eventType` takes one value or an array of `"sale"`, `"transfer"`, `"mint"`, `"listing"`, `"offer"`, `"trait_offer"`, and `"collection_offer"` (the `AssetEventType` enum). `getEvents` has no chain filter and ignores `chain`; `getEventsByAccount` honors it.
 
-- `"sale"` - NFT sales
-- `"transfer"` - NFT transfers
-- `"mint"` - NFT mints
-- `"listing"` - Item listings
-- `"offer"` - Item offers
-- `"trait_offer"` - Trait-based offers
-- `"collection_offer"` - Collection offers
-
-### Get Events by Account
-
-Fetch events for a specific account address:
+### Events by account
 
 ```typescript
 import { AssetEventType } from "@opensea/sdk";
@@ -290,9 +252,7 @@ const { assetEvents } = await openseaSDK.api.events.getEventsByAccount(
 );
 ```
 
-### Get Events by Collection
-
-Fetch events for a specific collection:
+### Events by collection
 
 ```typescript
 const { assetEvents } = await openseaSDK.api.events.getEventsByCollection(
@@ -303,9 +263,7 @@ const { assetEvents } = await openseaSDK.api.events.getEventsByCollection(
 );
 ```
 
-### Get Events by NFT
-
-Fetch events for a specific NFT:
+### Events by NFT
 
 ```typescript
 import { Chain, AssetEventType } from "@opensea/sdk";
@@ -320,39 +278,18 @@ const { assetEvents } = await openseaSDK.api.events.getEventsByNFT(
 );
 ```
 
-**Event Data:**
+### Event fields
 
-Each event includes:
+Every event has `eventType`, `eventTimestamp` (Unix seconds), `chain`, and `quantity`. The rest depends on the type:
 
-- `eventType`: Type of event (sale, transfer, order, etc.)
-- `eventTimestamp`: When the event occurred (Unix timestamp)
-- `chain`: Which blockchain the event occurred on
-- `quantity`: Number of items involved
+- Sales add `transaction`, `seller`, `buyer`, `payment`, and `nft`.
+- Transfers add `transaction`, `fromAddress`, `toAddress`, and `nft`.
+- Listings and offers add `maker`, `taker`, `payment`, `startDate`, and `expirationDate`. Listings also carry `isPrivateListing`.
+- Events with `eventType` `"order"` carry an `orderType` of `"listing"`, `"item_offer"`, `"collection_offer"`, or `"trait_offer"`.
 
-For **sale events**, additional fields include:
+### Pagination
 
-- `transaction`: Transaction hash
-- `seller` and `buyer`: Wallet addresses
-- `payment`: Payment amount and token details
-- `nft`: NFT details
-
-For **order events** (listings/offers), additional fields include:
-
-- `orderType`: "listing", "item_offer", "collection_offer", or "trait_offer"
-- `maker` and `taker`: Wallet addresses
-- `payment`: Offer/listing amount
-- `expirationDate`: When the order expires
-- `isPrivateListing`: Whether it's a private listing
-
-For **transfer events**, additional fields include:
-
-- `fromAddress` and `toAddress`: Wallet addresses
-- `transaction`: Transaction hash
-- `nft`: NFT details
-
-**Pagination:**
-
-Use the `next` cursor to fetch additional pages:
+Pass the returned `next` cursor to fetch the next page:
 
 ```typescript
 import { AssetEventType } from "@opensea/sdk";
@@ -372,9 +309,9 @@ do {
 } while (cursor);
 ```
 
-## Buying Items
+## Buying items
 
-To buy an item, you need to **fulfill a listing**. To do that, it's just one call:
+To buy an item, fulfill its listing:
 
 ```typescript
 const order = await openseaSDK.api.orders.getOrderByHash(
@@ -389,13 +326,11 @@ const transactionHash = await openseaSDK.fulfillOrder({
 });
 ```
 
-Note that the `fulfillOrder` promise resolves when the transaction has been confirmed and mined to the blockchain. To get the transaction hash before this happens, add an event listener for the `TransactionCreated` event (see the Advanced Use Cases guide for details on listening to events).
+The buyer is the taker and pays for the item. `fulfillOrder` resolves with the transaction hash once the transaction is mined. To get the hash earlier, listen for the `TransactionCreated` event (see [listening to events](advanced-use-cases.md#listening-to-events)).
 
-If the order is a listing, the taker is the _buyer_ and this will prompt the buyer to pay for the item(s).
+## Accepting offers
 
-## Accepting Offers
-
-Similar to fulfilling listings above, you need to fulfill an offer on an item you own to receive the tokens in the offer.
+To accept an offer on an item you own, fulfill it the same way. You are the taker, and you give up the item in exchange for the offered tokens.
 
 ```typescript
 const order = await openseaSDK.api.orders.getOrderByHash(
@@ -407,4 +342,3 @@ const accountAddress = "0x..."; // The owner's wallet address
 await openseaSDK.fulfillOrder({ order, accountAddress });
 ```
 
-If the order is an offer, then the taker is the _owner_ and this will prompt the owner to exchange their item(s) for whatever is being offered in return.

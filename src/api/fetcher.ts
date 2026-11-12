@@ -31,7 +31,7 @@ export type HttpMethod = "POST" | "PUT" | "PATCH" | "DELETE"
  * Fetcher context interface for making HTTP requests to the OpenSea API.
  * This interface abstracts the HTTP methods used by specialized API clients.
  *
- * Responses are camelized at this boundary — pass the API's snake_case shape
+ * Responses are camelized at this boundary: pass the API's snake_case shape
  * (e.g. an api-types response type) as `T` and the return is the camelCase
  * view. See `utils/case.ts`. Endpoints whose response keys are data rather
  * than field names opt out with {@link RequestOptions.camelizeResponse}, and

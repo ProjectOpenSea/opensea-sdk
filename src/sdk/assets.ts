@@ -217,8 +217,8 @@ export class AssetsManager {
 
   /**
    * Bulk transfer multiple assets using OpenSea's TransferHelper contract.
-   * This method is more gas-efficient than calling transfer() multiple times.
-   * Note: All assets must be approved for transfer to the OpenSea conduit before calling this method.
+   * Uses less gas than calling transfer() for each asset.
+   * All assets must be approved for transfer to the OpenSea conduit first.
    * @param options
    * @param options.assets Array of assets to transfer. Each asset must have tokenStandard set.
    * @param options.fromAddress The address to transfer from

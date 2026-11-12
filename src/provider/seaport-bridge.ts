@@ -24,7 +24,7 @@ export function createSeaportBridge(
   // We need the chain's RPC URL to create an ethers provider for seaport-js.
   // Prefer an explicit rpcUrl if provided (needed for non-HTTP transports).
   // Otherwise, extract it from the viem transport's internal properties.
-  // NOTE: transport.url / transport.value.url are viem internals that may
+  // transport.url / transport.value.url are viem internals and may
   // change across viem versions.
   const transport = (publicClient as any).transport
   const detectedUrl = transport?.url ?? transport?.value?.url

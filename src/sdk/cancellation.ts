@@ -27,7 +27,7 @@ export class CancellationManager {
    * @param options.orderHash Optional order hash to cancel. Must provide protocolAddress if using this.
    * @param options.accountAddress The account address that will be cancelling the order.
    * @param options.protocolAddress Required when using orderHash. The Seaport protocol address for the order.
-   * @param options.domain An optional domain to be hashed and included at the end of fulfillment calldata.  This can be used for onchain order attribution to assist with analytics.
+   * @param options.domain An optional domain to be hashed and included at the end of fulfillment calldata, used for onchain order attribution in analytics.
    * @returns Transaction hash of the cancellation.
    *
    * @throws Error if neither order nor orderHash is provided.
@@ -282,8 +282,8 @@ export class CancellationManager {
    * @param options
    * @param options.orders The orders to cancel
    * @param options.accountAddress The account address cancelling the orders.
-   * @param options.domain An optional domain to be hashed and included at the end of fulfillment calldata.
-   *                       This can be used for onchain order attribution to assist with analytics.
+   * @param options.domain An optional domain to be hashed and included at the end of fulfillment calldata,
+   *                       used for onchain order attribution in analytics.
    * @param options.overrides Transaction overrides, ignored if not set.
    * @returns Transaction hash of the order.
    */

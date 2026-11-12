@@ -20,7 +20,7 @@ const DEFAULT_TIMEOUT_MS = 30_000
  * OAuth 2.1 authorization-code + PKCE helper for OpenSea (OS2-33722).
  *
  * Runs the standard flow against the OpenSea authorization server (Zitadel at
- * `auth.opensea.io`) using a public client — no client secret, no private key,
+ * `auth.opensea.io`) as a public client: no client secret, no private key,
  * no SIWE message signing. This is the same flow spec-compliant MCP clients
  * discover via the MCP server's Protected Resource Metadata, exposed here for
  * programmatic consumers (the CLI's keyless `opensea login` is built on it).
@@ -187,7 +187,7 @@ export class OpenSeaOAuth {
   }
 
   /**
-   * Start a device authorization flow (RFC 8628) — for headless environments
+   * Start a device authorization flow (RFC 8628), for headless environments
    * where a browser redirect is not possible.
    */
   async requestDeviceAuthorization(options?: {
@@ -529,7 +529,7 @@ export function extractLinkedWallets(accessToken: string): string[] {
  * OpenSea issues both JWT and opaque access tokens, so "not a JWT" is an
  * expected input here rather than an error. Prefer this over wrapping
  * {@link decodeJwtPayload} in a try/catch, and use it to tell "no claim to
- * read" apart from "claim read, and it was empty" — {@link extractLinkedWallets}
+ * read" apart from "claim read, and it was empty": {@link extractLinkedWallets}
  * and {@link extractOpenSeaScopes} both return `[]` for either case.
  */
 export function tryDecodeJwtPayload(
@@ -544,7 +544,7 @@ export function tryDecodeJwtPayload(
 
 /**
  * Decode a JWT payload without verifying the signature. Intended for reading
- * claims out of a token the authorization server just issued to us over TLS —
+ * claims from a token the authorization server just issued to us over TLS,
  * NOT for validating inbound tokens.
  *
  * Throws when `token` is not a JWT. {@link tryDecodeJwtPayload} is the

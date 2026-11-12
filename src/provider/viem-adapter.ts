@@ -1,5 +1,5 @@
 /**
- * Viem adapter — wraps viem WalletClient/PublicClient into the SDK's abstract interfaces.
+ * Viem adapter: wraps a viem WalletClient/PublicClient in the SDK's abstract interfaces.
  *
  * viem is an optional peerDependency and a devDependency (for type-checking).
  * This module is only executed at runtime by code importing from "@opensea/sdk/viem",

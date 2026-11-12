@@ -7,22 +7,18 @@ order: 2
 hidden: false
 ---
 
-> 📖 **For a complete reference of all SDK methods with detailed parameters and return types, see the [API Reference](api-reference.md).**
+For every method's parameters and return types, see the [API reference](api-reference.md).
 
-- [Purchasing Items for Other Users](#purchasing-items-for-other-users)
-- [Private Orders](#private-orders)
-- [Canceling Orders](#canceling-orders)
-- [Bulk Order Creation](#bulk-order-creation)
-- [Bulk Transfers](#bulk-transfers)
-- [Listening to Events](#listening-to-events)
+- [Purchasing items for other users](#purchasing-items-for-other-users)
+- [Private orders](#private-orders)
+- [Canceling orders](#canceling-orders)
+- [Bulk order creation](#bulk-order-creation)
+- [Bulk transfers](#bulk-transfers)
+- [Listening to events](#listening-to-events)
 
-## Advanced
+## Purchasing items for other users
 
-Interested in purchasing for users server-side or with a bot, scheduling future orders, or making bids in different ERC-20 tokens? The OpenSea SDK can help with that.
-
-### Purchasing Items for Other Users
-
-You can buy and transfer an item to someone else in one step! Just pass the `recipientAddress` parameter:
+To buy an item and send it to someone else in one transaction, pass `recipientAddress`:
 
 ```typescript
 const orderHash = "0x...";
@@ -38,15 +34,13 @@ await openseaSDK.fulfillOrder({
 });
 ```
 
-If the order is a listing (`OrderSide.LISTING`), the taker is the _buyer_ and this will prompt the buyer to pay for the item(s) but send them to the `recipientAddress`. If the order is an offer (`OrderSide.OFFER`), the taker is the _seller_ but the offer amount will be sent to the `recipientAddress`.
+`accountAddress` pays and `recipientAddress` receives the item. `recipientAddress` only applies to listings; it has no effect when accepting an offer.
 
-This will automatically approve the assets for trading and confirm the transaction for sending them.
+`fulfillOrder` doesn't send approval transactions. For an ERC20-priced listing it checks the buyer's balance and allowance first, and throws an error naming the `approve` call to make instead of sending a transaction that would revert.
 
-### Private Orders
+## Private orders
 
-You can make offers and listings that can only be fulfilled by an address or email of your choosing. This allows you to negotiate a price in some channel and sell for your chosen price on OpenSea, **without having to trust that the counterparty will abide by your terms!**
-
-Here's an example of listing a Decentraland parcel for 10 ETH with a specific buyer address allowed to take it. No more needing to worry about whether they'll give you enough back!
+A private listing can only be filled by the address you name in `buyerAddress`. Agree on a price elsewhere, then list at that price for that buyer alone. This example lists a Decentraland parcel for 10 ETH:
 
 ```typescript
 // Address allowed to buy from you
@@ -65,26 +59,15 @@ const listing = await openseaSDK.createListing({
 });
 ```
 
-**Important**
+Only the taker is restricted, at the contract level. The order itself stays public and visible through OpenSea APIs and onchain indexers.
 
-> Private orders only restrict the taker address at the contract level. The order data remains public and discoverable via OpenSea APIs and onchain indexers.
+## Canceling orders
 
-### Canceling Orders
+Orders can be canceled onchain, which costs gas, or offchain for free if they are SignedZone orders.
 
-The SDK provides flexible options for canceling orders both onchain and offchain.
+### Onchain order cancellation
 
-#### Onchain Order Cancellation
-
-The SDK provides two methods for onchain order cancellation:
-
-**Cancel a Single Order**
-
-Use `cancelOrder()` to cancel a single order. This method accepts either:
-
-- A full `OrderV2` object from the API
-- Just an order hash (automatically fetches full order data)
-
-Both `cancelOrder()` and `cancelOrders()` return the cancellation transaction hash.
+`cancelOrder()` cancels one order and `cancelOrders()` cancels several in one transaction. Both return the transaction hash. Pass an order hash and the SDK fetches the order from the API for you, or pass an `OrderV2` you already hold:
 
 ```typescript
 import type { OrderV2 } from "@opensea/sdk";
@@ -107,13 +90,7 @@ await openseaSDK.cancelOrder({
 });
 ```
 
-**Cancel Multiple Orders**
-
-Use `cancelOrders()` to cancel multiple orders in a single transaction. This method accepts:
-
-- Full `OrderV2` objects from the API
-- Lightweight `OrderComponents`
-- Just order hashes (automatically fetches full order data)
+`cancelOrders()` also accepts lightweight `OrderComponents`:
 
 ```typescript
 import type { OrderV2 } from "@opensea/sdk";
@@ -136,11 +113,9 @@ await openseaSDK.cancelOrders({
 });
 ```
 
-When providing order hashes, the SDK automatically fetches the full order data from the OpenSea API, making it easier to cancel orders without manually fetching order details first.
+### Offchain order cancellation
 
-#### Offchain Order Cancellation
-
-For orders protected by SignedZone (a Seaport zone that validates orders offchain before allowing onchain fills), you can cancel them offchain (no gas required):
+Orders protected by SignedZone (a Seaport zone that validates orders offchain before allowing onchain fills) can be canceled offchain, with no gas and no wait for a block:
 
 ```typescript
 import { Chain } from "@opensea/sdk";
@@ -154,23 +129,18 @@ await openseaSDK.offchainCancelOrder(
 );
 ```
 
-Offchain cancellation is:
+Without an `offererSignature`, the SDK's API key must belong to the order's offerer. Cancellation is only guaranteed if no fulfillment signature was issued before it.
 
-- **Gas-free**: No transaction fees
-- **Instant**: No waiting for block confirmation
-- **Limited**: Only works for SignedZone-protected orders
-- **Authentication**: If `offererSignature` is not provided, the API key used to initialize the SDK must belong to the order's offerer
-- **Note**: Cancellation is only assured if no fulfillment signature was vended before cancellation
+The API refuses an offchain cancel for a recently created order, with the error "Orders created recently must be cancelled onchain". Cancel it [onchain](#onchain-order-cancellation) with `cancelOrder()`, which the SDK's error message also names. `sdk.api.orders.createCancelOrderActions()` returns the same onchain cancel as steps to execute yourself.
 
-The API refuses an offchain cancel for a recently created order, with the error "Orders created recently must be cancelled onchain". Cancel that order onchain with `cancelOrder()` (see [Onchain Order Cancellation](#onchain-order-cancellation)); the error the SDK throws names `cancelOrder` too. `sdk.api.orders.createCancelOrderActions()` returns the same onchain cancel as steps to execute yourself.
+## Bulk order creation
 
-### Bulk Order Creation
+`createBulkListings()` and `createBulkOffers()` sign many orders with one wallet signature, using Seaport's merkle tree bulk signatures. Each order keeps its own price, expiration, and other options. Orders are submitted to the API one at a time.
 
-The SDK provides efficient methods for creating multiple listings or offers with a single signature using Seaport's bulk order functionality. This is significantly more gas-efficient and faster than creating orders individually.
+With a single order, both methods fall back to `createListing()` or `createOffer()`, because a bulk signature costs more to verify onchain.
 
-#### Creating Multiple Listings
+### Creating multiple listings
 
-Use `createBulkListings()` to create multiple listings with a single signature:
 
 ```typescript
 import { getUnixTimestampInSeconds, TimeInSeconds } from "@opensea/sdk";
@@ -195,18 +165,8 @@ const listings = await openseaSDK.createBulkListings({
 });
 ```
 
-**Key Features:**
+### Creating multiple offers
 
-- **Single signature**: All listings are signed together using Seaport's merkle tree signature
-- **Individual customization**: Each listing can have different prices, expiration times, etc.
-- **Automatic rate limiting**: API submissions are handled sequentially with automatic retry on rate limits
-- **Efficient**: Uses normal signature for single listing to avoid bulk signature overhead
-
-**Performance Note:** If you only provide one listing, the method automatically uses `createListing()` internally since bulk signatures are more expensive to decode onchain.
-
-#### Creating Multiple Offers
-
-Use `createBulkOffers()` to create multiple offers with a single signature:
 
 ```typescript
 import { getUnixTimestampInSeconds, TimeInSeconds } from "@opensea/sdk";
@@ -232,16 +192,11 @@ const offers = await openseaSDK.createBulkOffers({
 });
 ```
 
-**Key Features:**
+Offers use the collection's pricing currency as the payment token and the chain's signed zone by default. If the collection requires a zone, the SDK uses that one.
 
-- **Single signature**: All offers are signed together
-- **Automatic payment tokens**: Payment tokens are resolved from collection pricing currencies
-- **Automatic zone handling**: Uses signed zone for offer protection by default
-- **Collection requirements**: Automatically applies collection-required zones when needed
+### Error handling in bulk operations
 
-#### Error Handling in Bulk Operations
-
-By default, bulk operations will throw an error if any order fails to submit. Use `continueOnError: true` to attempt all orders:
+By default, a bulk call throws as soon as one order fails to submit. Set `continueOnError: true` to attempt every order and get back the successes and failures:
 
 ```typescript
 const result = await openseaSDK.createBulkListings({
@@ -266,38 +221,25 @@ result.failed.forEach(({ index, error }) => {
 });
 ```
 
-**Progress Tracking:**
+`onProgress` runs after each order, successful or not.
 
-The `onProgress` callback is invoked after each order is processed (whether successful or failed), allowing you to update UI progress indicators during long-running bulk operations.
+Each entry in the `listings` or `offers` array takes:
 
-**Common Parameters for Both Methods:**
+| Field | Notes |
+| --- | --- |
+| `asset` | Required. `{ tokenAddress, tokenId }` |
+| `amount` | Required. Price in payment token units |
+| `quantity` | Defaults to 1. For semi-fungible tokens |
+| `expirationTime` | Unix seconds |
+| `domain` | Domain for order attribution |
+| `salt` | Custom order salt |
+| `buyerAddress` | Private listings only |
+| `includeOptionalCreatorFees` | Listings only |
+| `zone` | Custom zone address |
 
-Each listing or offer in the bulk array supports:
+Every SDK API call, bulk or not, retries on rate limits (HTTP 429 or 599). It logs the delay, waits for the `retry-after` header or an exponential backoff, and retries up to 3 times before throwing.
 
-- `asset`: The NFT to list/offer on (required)
-  - `tokenAddress`: Contract address (required)
-  - `tokenId`: Token ID (required)
-- `amount`: Price in token units (required)
-- `quantity`: Number of items (default: 1, for semi-fungible tokens)
-- `expirationTime`: When the order expires in Unix seconds
-- `domain`: Domain for order attribution
-- `salt`: Custom salt for the order
-- `buyerAddress`: For private listings only
-- `includeOptionalCreatorFees`: Include optional creator fees (listings only)
-- `zone`: Custom zone address
-
-**Automatic Rate Limiting:**
-
-All OpenSea API calls in the SDK include automatic rate limit handling with exponential backoff. If the API rate limits your requests (429/599 status codes), the SDK will:
-
-1. Log the rate limit encounter with retry delay
-2. Wait for the specified delay (respects `retry-after` header when present)
-3. Retry the failed request (up to 3 times by default)
-4. Continue with the operation
-
-This applies to all API operations, not just bulk orders. If a request fails after all retries, the operation will throw an error.
-
-**Example with All Options:**
+An example using most options:
 
 ```typescript
 import { getUnixTimestampInSeconds, TimeInSeconds } from "@opensea/sdk";
@@ -322,13 +264,13 @@ const listings = await openseaSDK.createBulkListings({
 });
 ```
 
-### Bulk Transfers
+## Bulk transfers
 
-The SDK provides gas-efficient methods for transferring multiple assets in a single transaction using OpenSea's TransferHelper contract.
+`bulkTransfer()` sends many assets in one transaction through OpenSea's TransferHelper contract.
 
-#### Batch Approving Assets
+### Batch approving assets
 
-Before transferring assets, you need to approve them for transfer to the OpenSea conduit. The `batchApproveAssets()` method checks each asset and approves only the contracts that need it:
+Assets must first be approved for the OpenSea conduit. `batchApproveAssets()` checks each asset and approves only the contracts that need it:
 
 ```typescript
 import { TokenStandard } from "@opensea/sdk";
@@ -356,13 +298,13 @@ const txHash = await openseaSDK.batchApproveAssets({
 });
 ```
 
-It sends one approval transaction from `fromAddress` per token contract that needs one, and skips contracts that are already approved. Assets that share a contract share one approval. The method returns the hash of the last approval, or `undefined` when nothing needed approving.
+It sends one approval transaction from `fromAddress` for each contract that needs one. Assets on the same contract share an approval. It returns the hash of the last approval, or `undefined` if nothing needed approving.
 
-Approvals cannot be combined into one transaction from a regular wallet: a token grants the approval to whoever calls it, so batching them through a contract such as Multicall3 would approve that contract instead of you.
+A regular wallet can't combine approvals into one transaction. A token grants the approval to its caller, so routing approvals through a contract such as Multicall3 would approve that contract instead of you.
 
-#### Bulk Transfer
+### Bulk transfer
 
-After assets are approved, use `bulkTransfer()` to transfer multiple assets to different recipients:
+Once approved, transfer the assets. Each one can go to a different recipient:
 
 ```typescript
 import { TokenStandard } from "@opensea/sdk";
@@ -400,18 +342,11 @@ const txHash = await openseaSDK.bulkTransfer({
 });
 ```
 
-**Important notes:**
+`bulkTransfer()` supports ERC20, ERC721, and ERC1155. If any asset isn't approved, it throws and points you to `batchApproveAssets()`.
 
-- All assets must be approved before calling `bulkTransfer()`
-- If any asset is not approved, the method will throw a helpful error message suggesting you use `batchApproveAssets()`
-- Supports ERC20, ERC721, and ERC1155 tokens
-- Each asset can be sent to a different recipient
+## Listening to events
 
-### Listening to Events
-
-Events are fired whenever transactions or orders are being created, and when transactions return receipts from recently mined blocks on the Ethereum blockchain.
-
-Our recommendation is that you "forward" OpenSea events to your own store or state management system. Here are examples of listening to the events:
+The SDK emits events when it creates transactions or orders and when transactions are mined. Forward them to your own store or state management:
 
 ```typescript
 import { EventType, type OpenSeaSDK } from '@opensea/sdk'
@@ -455,4 +390,4 @@ function handleSDKEvents() {
 }
 ```
 
-To remove all listeners call `sdk.removeAllListeners()`.
+`sdk.removeAllListeners()` removes them all.

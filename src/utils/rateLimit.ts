@@ -90,7 +90,7 @@ export async function executeWithRateLimit<T>(
       lastError = error as Error
       const rateLimitError = error as OpenSeaRateLimitError
 
-      // Check if this is a rate limit error by status code (robust) or retry-after header
+      // Rate limit error if the status code matches (preferred) or a retry-after header is present
       const isRateLimitError =
         rateLimitError?.statusCode === RATE_LIMIT_STATUS_CODE ||
         rateLimitError?.statusCode === CUSTOM_RATE_LIMIT_STATUS_CODE ||

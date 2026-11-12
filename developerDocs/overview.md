@@ -7,45 +7,41 @@ hidden: false
 
 # Overview
 
-This is the TypeScript SDK for [OpenSea](https://opensea.io), the largest marketplace for NFTs and tokens.
+The TypeScript SDK for [OpenSea](https://opensea.io). Use it to read the orderbook, create listings and offers, fulfill orders, and swap tokens across chains.
 
-It allows developers to access the official orderbook, filter it, create offers and listings, complete trades programmatically, and swap tokens across chains.
-
-## Getting Started
-
-Get started by getting an API key — instantly via API (no signup needed) or from the [developer portal](https://opensea.io/settings/developer) — and instantiating your own OpenSea SDK instance. Then you can create orders off-chain or fulfill orders onchain, and listen to events in the process.
-
-Happy seafaring! ⛵️
+To start, get an API key and create an `OpenSeaSDK` instance. Listings and offers are signed offchain. Fulfilling an order is an onchain transaction.
 
 ## Documentation
 
-- **[Quick Start Guide](quick-start.md)** - Installation and initialization
-- **[Getting Started Guide](getting-started.md)** - Learn the basics: fetching NFTs, making offers, creating listings, and swapping tokens
-- **[API Reference](api-reference.md)** - Complete reference for all SDK methods
-- **[Advanced Use Cases](advanced-use-cases.md)** - Bulk operations, canceling orders, event listening, and more
-- **Key v10 Types**: `Amount` (`string | number | bigint`), `OpenSeaSigner`, `OpenSeaProvider`, `ContractCaller`, `OpenSeaWallet`
-- **[FAQ](faq.md)** - Frequently asked questions
-- **[Contributing](contributing.md)** - How to contribute to the SDK
+- [Quick start](quick-start.md): install and initialize
+- [Getting started](getting-started.md): fetch NFTs, make offers, create listings, buy and sell
+- [API reference](api-reference.md): every SDK method
+- [Advanced use cases](advanced-use-cases.md): bulk orders, cancellation, event listeners, and more
+- [Stream migration](stream-migration.md): moving from `@opensea/stream-js`
+- [FAQ](faq.md)
+- [Contributing](contributing.md)
+
+v10 exports these core types: `Amount` (`string | number | bigint`), `OpenSeaSigner`, `OpenSeaProvider`, `ContractCaller`, and `OpenSeaWallet`.
 
 ## Requirements
 
 - Node.js 22 or higher
-- An OpenSea API key — get one instantly: `curl -s -X POST https://api.opensea.io/api/v2/auth/keys | jq -r '.api_key'` or from [opensea.io/settings/developer](https://opensea.io/settings/developer)
-- A web3 provider: ethers.js (`JsonRpcProvider` / `Wallet`) or viem (`publicClient` / `walletClient`)
+- An OpenSea API key. Request one instantly with `curl -s -X POST https://api.opensea.io/api/v2/auth/keys | jq -r '.api_key'`, or create one at [opensea.io/settings/developer](https://opensea.io/settings/developer).
+- ethers.js (`JsonRpcProvider` / `Wallet`) or viem (`publicClient` / `walletClient`)
 
-## Key Features
+## Features
 
-- **Create Listings & Offers**: List NFTs and tokens for sale or make offers on items
-- **Fulfill Orders**: Buy listings or accept offers programmatically
-- **Bulk Operations**: Create multiple listings/offers with a single signature
-- **Events API**: Query historical sales, transfers, and order events
-- **Token API**: Fetch trending tokens, top tokens, swap quotes, and token details
-- **Search API**: Search across collections, tokens, NFTs, and accounts
-- **Multi-chain Support**: Ethereum, Polygon, Arbitrum, Base, Optimism, and more
-- **Type-Safe**: Full TypeScript support with comprehensive type definitions
-- **Event Listeners**: React to transactions and order changes in real-time
+- Create listings and offers on NFTs and tokens
+- Buy listings and accept offers
+- Create many listings or offers with one signature
+- Query historical sales, transfers, and order events
+- Fetch trending and top tokens, swap quotes, and token details
+- Search collections, tokens, NFTs, and accounts
+- Ethereum, Polygon, Arbitrum, Base, Optimism, and [other chains](faq.md#what-chains-are-supported)
+- Full TypeScript types
+- Event listeners for transactions and order changes
 
-## Example Usage
+## Example usage
 
 ### With ethers.js
 
@@ -76,7 +72,7 @@ const sdk = new OpenSeaSDK(
 );
 ```
 
-### Common usage (same for both providers)
+### Common usage (both providers)
 
 ```typescript
 // Fetch an NFT
@@ -97,15 +93,13 @@ const order = await sdk.api.orders.getOrderByHash(
 await sdk.fulfillOrder({ order, accountAddress: walletAddress });
 ```
 
-## Security Warning
+## Security
 
-⚠️ **Do not use this SDK directly in client-side/frontend applications.**
+Don't use this SDK in client-side code. It needs an API key, and any key shipped to a browser can be extracted. Instead:
 
-The SDK requires an API key which should never be exposed in frontend code. Instead:
+1. Run the SDK on your backend.
+2. Expose endpoints that wrap the SDK calls you need.
+3. Call those endpoints from your frontend.
+4. Have users sign transactions with their own wallets in the browser.
 
-1. Use the SDK on a secure backend server
-2. Create API endpoints that wrap SDK functionality
-3. Call your backend from the frontend
-4. Have users sign transactions with their wallets in the browser
-
-See the [README Security Warning](../README.md#security-warning) for more details.
+See the [README security warning](../README.md#security-warning).

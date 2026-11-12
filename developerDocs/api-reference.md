@@ -9,20 +9,20 @@ hidden: false
 
 # OpenSea API Reference
 
-This comprehensive reference documents all OpenSea API endpoints available through the @opensea/sdk. The SDK provides convenient TypeScript methods to interact with the OpenSea API v2.
+Every OpenSea API v2 endpoint the SDK wraps, with parameters, return types, and examples.
 
-> **Note:** Your API key should only be used on a secure backend server. Never expose it in client-side code, public repositories, or browser environments. See the [Security Warning](../README.md#security-warning) in the README for more details.
+Use your API key only on a backend server. Keep it out of client-side code, browser environments, and public repositories. See the [README security warning](../README.md#security-warning).
 
-- [NFT Endpoints](#nft-endpoints)
-- [Collection Endpoints](#collection-endpoints)
-- [Listing Endpoints](#listing-endpoints)
-- [Offer Endpoints](#offer-endpoints)
-- [Order Endpoints](#order-endpoints)
-- [Account Endpoints](#account-endpoints)
-- [Event Endpoints](#event-endpoints)
-- [Token Endpoints](#token-endpoints)
-- [Search Endpoint](#search-endpoint)
-- [Tool Endpoints [Beta]](#tool-endpoints-beta)
+- [NFT endpoints](#nft-endpoints)
+- [Collection endpoints](#collection-endpoints)
+- [Listing endpoints](#listing-endpoints)
+- [Offer endpoints](#offer-endpoints)
+- [Order endpoints](#order-endpoints)
+- [Account endpoints](#account-endpoints)
+- [Event endpoints](#event-endpoints)
+- [Token endpoints](#token-endpoints)
+- [Search endpoint](#search-endpoint)
+- [Tool endpoints [beta]](#tool-endpoints-beta)
 
 ---
 
@@ -51,7 +51,7 @@ at the namespaced call. Four of them differ in name as well as shape:
 | `api.getDeployContractReceipt` | `api.drops.getDeployReceipt` |
 | `api.validateNFTMetadata` | `api.nfts.validateMetadata` |
 
-## NFT Endpoints
+## NFT endpoints
 
 ### Get NFT
 
@@ -85,7 +85,7 @@ console.log(nft.traits);
 
 ---
 
-### Get NFTs by Collection
+### Get NFTs by collection
 
 Fetch multiple NFTs for a collection with pagination support.
 
@@ -115,7 +115,7 @@ console.log(`Fetched ${nfts.length} NFTs`);
 
 ---
 
-### Get NFTs by Contract
+### Get NFTs by contract
 
 Fetch multiple NFTs for a specific contract address.
 
@@ -143,7 +143,7 @@ const { nfts, next } = await openseaSDK.api.nfts.getNFTsByContract(
 
 ---
 
-### Get NFTs by Account
+### Get NFTs by account
 
 Fetch NFTs owned by a specific account address.
 
@@ -188,7 +188,7 @@ const { nfts: withAirdrops } = await openseaSDK.api.nfts.getNFTsByAccount(
 
 ---
 
-### Get NFTs by Collection Group
+### Get NFTs by collection group
 
 Search NFTs across every collection in a group, such as `trading_cards`, by normalized attributes that are consistent across issuers (franchise, grader, grade, subject, year, set, language, edition, product type). Each attribute filter is a list that matches any of its values, and separate filters are AND-combined. List values are sent as repeated query parameters (`?grader=PSA&grader=CGC`).
 
@@ -213,7 +213,7 @@ const { nfts, next } = await openseaSDK.api.nfts.getNFTsByGroup(
 
 ---
 
-### Get Collection Group Facets
+### Get collection group facets
 
 Fetch the values of each normalized attribute in a group with the number of matching NFTs. Each facet is narrowed by the filters of the other types, so a facet keeps listing all of its own values.
 
@@ -231,9 +231,9 @@ const { facets } = await openseaSDK.api.nfts.getNFTGroupFacets(
 
 ---
 
-### Refresh NFT Metadata
+### Refresh NFT metadata
 
-Force a metadata refresh for an NFT. Useful after updating metadata onchain.
+Force a metadata refresh for an NFT, for example after updating its metadata onchain.
 
 ```typescript
 import { Chain } from "@opensea/sdk";
@@ -259,7 +259,7 @@ await openseaSDK.api.nfts.refreshNFTMetadata(
 
 ---
 
-### Get Contract
+### Get contract
 
 Fetch smart contract information including name, chain, and associated collection.
 
@@ -293,9 +293,9 @@ console.log(contract.contractStandard); // "erc721"
 
 ---
 
-## Collection Endpoints
+## Collection endpoints
 
-### Get Collection
+### Get collection
 
 Fetch detailed information about a single collection including fees, traits, and social links.
 
@@ -313,11 +313,11 @@ console.log(collection.fees);
 | --------- | ------ | -------- | ---------------------------- |
 | `slug`    | string | Yes      | Collection slug (identifier) |
 
-**Returns:** `OpenSeaCollection` object with comprehensive collection data.
+**Returns:** `OpenSeaCollection` with the collection's details.
 
 ---
 
-### Get Collections
+### Get collections
 
 Fetch a list of collections with filtering and sorting options.
 
@@ -361,7 +361,7 @@ const { collections, next } = await openseaSDK.api.collections.getCollections(
 
 ---
 
-### Get Collection Stats
+### Get collection stats
 
 Fetch statistical data for a collection including floor price, volume, and sales.
 
@@ -386,9 +386,9 @@ console.log(stats.total.floorPrice); // Current floor price
 
 ---
 
-### Get Traits
+### Get traits
 
-Fetch all traits for a collection with their possible values and occurrence counts. Useful for building trait filters and rarity calculators.
+Fetch a collection's traits with their possible values and occurrence counts, for trait filters or rarity calculations.
 
 ```typescript
 const { categories, counts } =
@@ -419,16 +419,9 @@ console.log(`Brown Fur rarity: ${rarity.toFixed(2)}%`);
 - `categories`: Object mapping trait types to their data type ("string", "number", or "date")
 - `counts`: Object with trait counts for each category
 
-**Use Cases:**
-
-- Build trait filter interfaces
-- Calculate trait rarity
-- Display trait distribution charts
-- Validate trait offers
-
 ---
 
-### Get Creator Fee Enforcement
+### Get creator fee enforcement
 
 Check whether a collection enforces creator fees onchain today, and whether its contract supports turning enforcement on.
 
@@ -441,7 +434,7 @@ const { enabled, eligible } =
 
 ---
 
-### Get Collection PFP Profiles
+### Get collection PFP profiles
 
 List the profiles that wear a verified NFT from a collection as their profile picture.
 
@@ -462,7 +455,7 @@ const page2 = await openseaSDK.api.collections.getCollectionPfpProfiles(
 
 ---
 
-### Get Top PFP Collections
+### Get top PFP collections
 
 Rank collections by how many accounts wear one of their verified NFTs as a profile picture.
 
@@ -480,7 +473,7 @@ const { collections } = await openseaSDK.api.collections.getTopPfpCollections({
 
 ---
 
-### Manage a Collection
+### Manage a collection
 
 Collection editors manage a collection through `api.walletAuth`, which needs an `authToken` with the `write:collections` scope (see "Wallet-authenticated API helpers" in the README).
 
@@ -513,9 +506,9 @@ await openseaSDK.api.walletAuth.refreshCollectionMetadata("my-collection");
 
 ---
 
-## Listing Endpoints
+## Listing endpoints
 
-### Get All Listings
+### Get all listings
 
 Get all active listings for a collection with pagination.
 
@@ -551,7 +544,7 @@ listings.forEach((listing) => {
 
 ---
 
-### Get Best Listing
+### Get best listing
 
 Get the best (lowest price) active listing for a specific NFT.
 
@@ -574,7 +567,7 @@ console.log(`Seller: ${listing.protocolData?.parameters.offerer}`);
 
 ---
 
-### Get Best Listings
+### Get best listings
 
 Get the best listings for each NFT in a collection.
 
@@ -601,10 +594,8 @@ const { listings, next } = await openseaSDK.api.listings.getBestListings(
 
 ### Per-NFT listings
 
-There is no endpoint that returns every active listing for a single NFT. This section previously
-documented `api.getNFTListings(...)`, which was removed in
-[#276](https://github.com/ProjectOpenSea/opensea-devtools/pull/276) and has no replacement, so the
-example here could not have run.
+There is no endpoint that returns every active listing for a single NFT. `api.getNFTListings(...)`
+was removed and has no replacement.
 
 Two calls cover what it was used for:
 
@@ -626,9 +617,9 @@ console.log(`Cheapest: ${parseFloat(price) / 10 ** decimals} ETH`);
 
 ---
 
-## Offer Endpoints
+## Offer endpoints
 
-### Get All Offers
+### Get all offers
 
 Get all active offers for a collection.
 
@@ -659,7 +650,7 @@ offers.forEach((offer) => {
 
 ---
 
-### Get Trait Offers
+### Get trait offers
 
 Get offers for NFTs with specific trait values.
 
@@ -691,7 +682,7 @@ const { offers, next } = await openseaSDK.api.offers.getTraitOffers(
 
 ---
 
-### Get Best Offer
+### Get best offer
 
 Get the highest active offer for a specific NFT.
 
@@ -713,9 +704,9 @@ console.log(`Offerer: ${offer.protocolData?.parameters.offerer}`);
 
 ---
 
-### Get NFT Offers
+### Get NFT offers
 
-Get all active offers for a specific NFT (not just the best one). Useful for showing all buying interest.
+Get every active offer on one NFT, not only the best one.
 
 ```typescript
 const { offers, next } = await openseaSDK.api.offers.getOffersByNFT(
@@ -750,15 +741,9 @@ offers.forEach((offer) => {
 - `offers`: Array of all active offers for the NFT
 - `next`: Pagination cursor
 
-**Use Cases:**
-
-- Display all offers received on an NFT
-- Find highest bidders
-- Show offer history and interest level
-
 ---
 
-### Build Offer
+### Build offer
 
 Build criteria offer data for collection or trait offers.
 
@@ -804,7 +789,7 @@ const multiTraitOffer = await openseaSDK.api.offers.buildOffer(
 
 ---
 
-### Get Collection Offers
+### Get collection offers
 
 Get all collection-level offers for a collection.
 
@@ -835,7 +820,7 @@ offers.forEach((offer) => {
 
 ---
 
-### Post Collection Offer
+### Post collection offer
 
 Submit a collection or trait offer to OpenSea.
 
@@ -875,9 +860,9 @@ const multiTraitOffer = await openseaSDK.api.offers.postCollectionOffer(
 
 ---
 
-## Order Endpoints
+## Order endpoints
 
-### Get Order by Hash
+### Get order by hash
 
 Fetch a single order by its unique hash.
 
@@ -903,15 +888,9 @@ console.log(order.protocolData?.parameters);
 
 **Returns:** `GetOrderByHashResponse` (Offer | Listing)
 
-**Use Cases:**
-
-- Retrieve order for fulfillment
-- Check order status before cancellation
-- Fetch order details for UI display
-
 ---
 
-### Generate Fulfillment Data
+### Generate fulfillment data
 
 Generate the data needed to fulfill a listing or offer onchain.
 
@@ -949,7 +928,7 @@ const fulfillmentData = await openseaSDK.api.orders.generateFulfillmentData(
 
 ---
 
-### Post Listing
+### Post listing
 
 Submit a signed listing to OpenSea. Returns the new v2 Listing response format.
 
@@ -971,7 +950,7 @@ const listing = await openseaSDK.api.orders.postListing(
 
 ---
 
-### Post Offer
+### Post offer
 
 Submit a signed offer to OpenSea. Returns the new v2 Offer response format.
 
@@ -993,7 +972,7 @@ const offer = await openseaSDK.api.orders.postOffer(
 
 ---
 
-### Offchain Cancel Order
+### Offchain cancel order
 
 Cancel an order off-chain (gas-free) when protected by SignedZone.
 
@@ -1023,18 +1002,13 @@ console.log(
 
 **Returns:** `CancelOrderResponse` with cancellation details.
 
-**Important Notes:**
-
-- Only works for SignedZone-protected orders
-- No gas fees required
-- If signature not provided, API key must belong to order offerer
-- Cancellation only assured if no fulfillment signature was vended
+This only works for SignedZone-protected orders and costs no gas. Without `offererSignature`, the SDK's API key must belong to the order's offerer. Cancellation is only guaranteed if no fulfillment signature was issued before it.
 
 ---
 
-## Account Endpoints
+## Account endpoints
 
-### Get Account
+### Get account
 
 Fetch account profile information from OpenSea.
 
@@ -1058,7 +1032,7 @@ console.log(account.profileImageUrl);
 
 ---
 
-### Get Profile Shelves
+### Get profile shelves
 
 Fetch the shelves a wallet shows on its public profile. An API key is enough; the wallet token is
 sent too when the client has one. The create, reorder, update and delete helpers next to it on
@@ -1085,7 +1059,7 @@ with `id`, `title`, `displayOrder`, `items` and `shelfItemMetadata`.
 
 ---
 
-### Get Payment Token
+### Get payment token
 
 Fetch details about a payment token (ERC20) used on OpenSea.
 
@@ -1113,11 +1087,11 @@ console.log(token.usdPrice); // Current USD price
 
 ---
 
-## Event Endpoints
+## Event endpoints
 
 Events include sales, transfers, listings, offers, and cancellations.
 
-### Get Events
+### Get events
 
 Fetch all events with optional filtering.
 
@@ -1129,7 +1103,6 @@ const { assetEvents, next } = await openseaSDK.api.events.getEvents({
   limit: 50,
   after: 1672531200, // Unix timestamp
   before: 1675209600, // Unix timestamp
-  chain: "ethereum",
 });
 
 assetEvents.forEach((event) => {
@@ -1143,22 +1116,14 @@ assetEvents.forEach((event) => {
 
 | Parameter    | Type                     | Required | Description                  |
 | ------------ | ------------------------ | -------- | ---------------------------- |
-| `eventType`  | AssetEventType \| string | No       | Filter by event type         |
+| `eventType`  | AssetEventType \| string, or an array | No | Filter by one or more event types |
 | `after`      | number                   | No       | Events after Unix timestamp  |
 | `before`     | number                   | No       | Events before Unix timestamp |
-| `limit`      | number                   | No       | Number of events to return   |
+| `limit`      | number                   | No       | Events per page, 1 to 200    |
 | `next`       | string                   | No       | Pagination cursor            |
-| `chain`      | string                   | No       | Filter by blockchain         |
+| `chain`      | string                   | No       | Ignored here: this endpoint has no chain filter. `getEventsByAccount` honors it |
 
-**Event Types:**
-
-- `"sale"` - NFT sales
-- `"transfer"` - NFT transfers
-- `"mint"` - NFT mints
-- `"listing"` - Item listings
-- `"offer"` - Item offers
-- `"trait_offer"` - Trait-based offers
-- `"collection_offer"` - Collection offers
+Event types are `"sale"`, `"transfer"`, `"mint"`, `"listing"`, `"offer"`, `"trait_offer"`, and `"collection_offer"`.
 
 **Returns:** `GetEventsResponse` containing:
 
@@ -1167,7 +1132,7 @@ assetEvents.forEach((event) => {
 
 ---
 
-### Get Events by Account
+### Get events by account
 
 Fetch events for a specific account.
 
@@ -1194,7 +1159,7 @@ const { assetEvents } = await openseaSDK.api.events.getEventsByAccount(
 
 ---
 
-### Get Events by Collection
+### Get events by collection
 
 Fetch events for a specific collection.
 
@@ -1224,13 +1189,13 @@ assetEvents.forEach((event) => {
 | Parameter        | Type          | Required | Description                                                                                                                                                       |
 | ---------------- | ------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `collectionSlug` | string        | Yes      | Collection slug                                                                                                                                                   |
-| `args`           | GetEventsArgs | No       | Event filtering options. `args.traits` is a `TraitFilter[]` (e.g. `[{ traitType: "Background", value: "Red" }]`) to scope events to NFTs matching every trait — the SDK JSON-encodes it for the request. |
+| `args`           | GetEventsArgs | No       | Event filtering options. `args.traits` is a `TraitFilter[]` (e.g. `[{ traitType: "Background", value: "Red" }]`) to scope events to NFTs matching every trait. The SDK JSON-encodes it for the request. |
 
 **Returns:** `GetEventsResponse` with collection events.
 
 ---
 
-### Get Events by NFT
+### Get events by NFT
 
 Fetch events for a specific NFT.
 
@@ -1269,9 +1234,9 @@ assetEvents.forEach((event) => {
 
 ---
 
-## Event Data Structures
+## Event data structures
 
-### Sale Events
+### Sale events
 
 ```ts
 type SaleEvent = {
@@ -1291,7 +1256,7 @@ type SaleEvent = {
 }
 ```
 
-### Order Events (Listings/Offers)
+### Order events (listings/offers)
 
 ```ts
 type OrderEvent = {
@@ -1307,7 +1272,7 @@ type OrderEvent = {
 }
 ```
 
-### Transfer Events
+### Transfer events
 
 ```ts
 type TransferEvent = {
@@ -1322,9 +1287,9 @@ type TransferEvent = {
 
 ---
 
-## Token Endpoints
+## Token endpoints
 
-### Get Trending Tokens
+### Get trending tokens
 
 Fetch a list of trending tokens with pagination.
 
@@ -1352,7 +1317,7 @@ tokens.forEach((token) => {
 
 ---
 
-### Get Top Tokens
+### Get top tokens
 
 Fetch a list of top tokens with pagination.
 
@@ -1380,7 +1345,7 @@ tokens.forEach((token) => {
 
 ---
 
-### Get Swap Quote
+### Get swap quote
 
 Get a swap quote for exchanging tokens.
 
@@ -1415,7 +1380,7 @@ Set `fromChain` and `toChain` to different chains for cross-chain swaps.
 
 ---
 
-### Get Token
+### Get token
 
 Fetch details for a specific token by chain and contract address.
 
@@ -1439,7 +1404,7 @@ console.log(`${token.name} (${token.symbol})`);
 
 ---
 
-### Get Token Activity Stats
+### Get token activity stats
 
 Fetch materialized trade count, USD volume, and average trade size for a token.
 
@@ -1470,7 +1435,7 @@ window is absent when the token has no swaps in that period.
 
 ---
 
-## Search Endpoint
+## Search endpoint
 
 ### Search
 
@@ -1512,7 +1477,7 @@ results.results.forEach((result) => {
 
 ---
 
-## Upload Contexts
+## Upload contexts
 
 Five `walletAuth` helpers return an `UploadContext`, a short-lived presigned storage upload, instead of taking the file themselves:
 
@@ -1524,7 +1489,7 @@ Five `walletAuth` helpers return an `UploadContext`, a short-lived presigned sto
 | `createDropCollectionManifestUpload(slug)` | `UploadContext` |
 | `createDropItemMediaUpload(slug, body)` | `UploadContext[]`, one per filename |
 
-### Upload to a Context
+### Upload to a context
 
 `uploadToContext(context, file, options?)` sends the file to the context's storage URL and resolves to `{ token }`, which you pass to the follow-up call (for example `profileImageToken` in `updateProfileSettings`). It uses the global `fetch`, `FormData` and `Blob`, so it runs in browsers and in Node 22+, and it never sends your API key or wallet token to storage.
 
@@ -1556,7 +1521,7 @@ The file goes to whatever URL the context names, and `selectUploadContext` check
 
 **Throws:** an `Error` for a malformed or non-HTTPS context before anything is sent, and `UploadContextError` when storage answers with a non-2xx status. `UploadContextError` has only `status`, and its message is `Storage upload failed with HTTP <status>`. The response body is never read (it is cancelled on success and on failure), since storage error bodies can echo signed request material, and neither error includes the URL or the signed fields.
 
-### Select an Upload Context
+### Select an upload context
 
 `selectUploadContext(value, index?)` checks that a value is an upload context and returns it. For the array `createDropItemMediaUpload` returns, pass the index of the one to use.
 
@@ -1577,13 +1542,13 @@ for (const [i, file] of files.entries()) {
 
 ---
 
-## Signal Endpoints
+## Signal endpoints
 
 Signals are public posts on OpenSea about one subject: a currency, an NFT or a collection. Reading them needs only an API key, so `getSignal` and `listSignals` live on `openseaSDK.api.signals`. Creating and deleting a signal needs an `authToken` with the `write:posts` scope, so those live on `api.walletAuth` as `createSignal` and `deleteSignal`. Signals cannot be edited.
 
 A signal ID is an opaque `sig_v1_...` string. Pass it back unchanged.
 
-### Get Signal
+### Get signal
 
 ```typescript
 const signal = await openseaSDK.api.signals.getSignal("sig_v1_...");
@@ -1594,7 +1559,7 @@ console.log(signal.text, signal.authorAddress, signal.subject.type);
 
 ---
 
-### List Signals
+### List signals
 
 ```typescript
 const { signals, next } = await openseaSDK.api.signals.listSignals({
@@ -1623,7 +1588,7 @@ do {
 
 ---
 
-### Create and Delete a Signal
+### Create and delete a signal
 
 ```typescript
 const { signalId } = await openseaSDK.api.walletAuth.createSignal({
@@ -1638,13 +1603,13 @@ await openseaSDK.api.walletAuth.deleteSignal(signalId);
 
 ---
 
-## Tool Endpoints [Beta]
+## Tool endpoints [beta]
 
 Methods on `openseaSDK.api.tools` for tools registered in the ERC-8257 tool registry and the x402 directories. These endpoints are in beta and may change without notice. A tool is identified by its registry chain ID, its registry address (an EVM address, or `x402_bazaar` / `x402_bankr` for x402 tools) and its tool ID. Each part is encoded as one path segment.
 
 Saved tools are per account and need wallet auth (`read:tools` / `write:tools`), so they live on `api.walletAuth` as `listSavedTools`, `saveTool` and `removeSavedTool`.
 
-### List Tools
+### List tools
 
 ```typescript
 const { tools, next } = await openseaSDK.api.tools.listTools({
@@ -1660,7 +1625,7 @@ const { tools, next } = await openseaSDK.api.tools.listTools({
 
 ---
 
-### Search Tools
+### Search tools
 
 ```typescript
 const { results } = await openseaSDK.api.tools.searchTools({
@@ -1677,7 +1642,7 @@ const { results } = await openseaSDK.api.tools.searchTools({
 
 ---
 
-### Get Tool
+### Get tool
 
 ```typescript
 const tool = await openseaSDK.api.tools.getTool(
@@ -1692,7 +1657,7 @@ console.log(tool.displayName, tool.pricingRecipients);
 
 ---
 
-### Get Tool Activity
+### Get tool activity
 
 ```typescript
 const { activity } = await openseaSDK.api.tools.getToolActivity(
@@ -1709,7 +1674,7 @@ const { activity } = await openseaSDK.api.tools.getToolActivity(
 
 ---
 
-### Report Tool Usage
+### Report tool usage
 
 Report a verified tool invocation for metrics. This does not trigger any onchain transaction. Identify the tool with `toolChainId`, `toolRegistryAddress` and `toolOnchainId`, or with `toolEndpoint` alone. Tool authors who report from their server can use the reporters in `@opensea/tool-sdk` instead.
 
@@ -1756,25 +1721,15 @@ console.log(`Fetched ${allResults.length} total results`);
 
 ---
 
-## Rate Limiting
+## Rate limiting
 
-The SDK automatically handles rate limiting with exponential backoff:
+On a 429 or 599 response, the SDK logs the delay, waits for the `retry-after` header (or an exponential backoff when there is none), and retries up to 3 times. After that it throws.
 
-- Detects 429 (Too Many Requests) and 599 (custom rate limit) status codes
-- Respects `retry-after` header when present
-- Automatically retries failed requests up to 3 times
-- Logs rate limit encounters with retry delay
-
-**Best Practices:**
-
-- Use pagination to avoid large single requests
-- Implement caching for frequently accessed data
-- Use bulk operations when available
-- Monitor your API usage in OpenSea dashboard
+To stay under the limit, paginate instead of making large single requests, cache data you read often, use bulk operations where they exist, and watch your usage in the OpenSea developer dashboard.
 
 ---
 
-## Error Handling
+## Error handling
 
 ```typescript
 try {
@@ -1789,7 +1744,7 @@ try {
   if (error.message.includes("Not found")) {
     console.log("No matching order found");
   } else if ((error as { statusCode?: number }).statusCode === 429) {
-    console.log("Rate limited, will retry automatically");
+    console.log("Still rate limited after the SDK's retries");
   } else {
     console.error("API error:", error.message);
   }
@@ -1798,9 +1753,9 @@ try {
 
 ---
 
-## Common Patterns
+## Common patterns
 
-### Check if NFT has Active Listings
+### Check if NFT has active listings
 
 The best-listing endpoint returns 404 when nothing is listed, which the SDK raises as an error
 rather than returning an empty result, so this is a `try`/`catch` rather than a length check.
@@ -1824,7 +1779,7 @@ try {
 }
 ```
 
-### Find Best Price for NFT
+### Find best price for NFT
 
 ```typescript
 const bestListing = await openseaSDK.api.listings.getBestListing(
@@ -1839,7 +1794,7 @@ const offerPrice = parseFloat(bestOffer.price.value);
 console.log(`Spread: ${listingPrice - offerPrice} wei`);
 ```
 
-### Build Trait Filter
+### Build trait filter
 
 ```typescript
 const { categories, counts } = await openseaSDK.api.collections.getTraits(collectionSlug);

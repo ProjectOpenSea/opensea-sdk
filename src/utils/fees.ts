@@ -29,7 +29,7 @@ export const basisPointsForFee = (fee: Fee): bigint => {
   // (1e-7).toString() → "1e-7", which needs to become "0.0000001"
   let str = fee.fee.toString()
   if (str.includes("e") || str.includes("E")) {
-    // toFixed(10) covers fees down to 0.00000001% — far beyond realistic usage.
+    // toFixed(10) covers fees down to 0.00000001%, well below any realistic fee.
     str = fee.fee.toFixed(10).replace(/0+$/, "").replace(/\.$/, "")
   }
 

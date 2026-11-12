@@ -77,7 +77,7 @@ export class DropsAPI {
 
   /**
    * Builds a deploy-contract transaction for a new drop. Returns
-   * ready-to-sign transaction data — caller submits onchain and then polls
+   * ready-to-sign transaction data. The caller submits it onchain, then polls
    * `getDeployReceipt` until the contract address is available.
    */
   async deployDropContract(

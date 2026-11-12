@@ -19,7 +19,7 @@ export type { FetchImpl } from "./utils/fetchTransport"
 /**
  * Numeric type for amounts (replaces ethers BigNumberish).
  * Prefer `string` for decimal amounts (e.g. "1.5") to avoid floating point
- * precision issues — `number` values like `0.1 + 0.2` produce `0.30000000000000004`.
+ * errors: `number` math like `0.1 + 0.2` gives `0.30000000000000004`.
  */
 export type Amount = string | number | bigint
 
@@ -175,7 +175,7 @@ export interface OpenSeaAPIConfig {
 
 /**
  * Each of the possible chains that OpenSea supports.
- * ⚠️NOTE: When adding to this list, also update:
+ * When adding a chain, also update:
  * - `scripts/chain-data.json` + run `pnpm sync-chains` (generates `getChainId` mapping)
  * - `getListingPaymentToken`
  * - `getOfferPaymentToken`
@@ -215,7 +215,7 @@ export enum Chain {
 }
 
 // Compile-time check: every ChainIdentifier from the API spec must be assignable to Chain.
-// If the API adds a new chain, this will error — add it to the Chain enum above.
+// If the API adds a new chain, this errors: add it to the Chain enum above.
 // The SDK may have chains not yet in the API spec (e.g. testnets, upcoming chains).
 type _AssertAPIChainsCovered = ChainIdentifier extends `${Chain}` ? true : never
 
@@ -296,7 +296,7 @@ export interface AssetWithTokenStandard extends Asset {
 }
 
 /**
- * OpenSea Collection Stats — sourced from api-types `CollectionStatsResponse`.
+ * OpenSea collection stats, from api-types `CollectionStatsResponse`.
  * @category API Models
  */
 export type OpenSeaCollectionStats = Camelize<CollectionStatsResponse>

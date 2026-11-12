@@ -7,13 +7,11 @@ order: 0
 hidden: false
 ---
 
-> 📖 **For a complete reference of all SDK methods with detailed parameters and return types, see the [API Reference](api-reference.md).**
+For every method's parameters and return types, see the [API reference](api-reference.md).
 
 # Installation
 
-Node.js version 22 or higher is required for the SDK. If you have Node Version Manager (nvm), run `nvm use 22`.
-
-Then in your project, run:
+The SDK requires Node.js 22 or higher (`nvm use 22` if you use nvm). Install it:
 
 ```bash
 npm install --save @opensea/sdk
@@ -21,7 +19,7 @@ npm install --save @opensea/sdk
 yarn add @opensea/sdk
 ```
 
-The SDK supports two provider libraries. Install the one you prefer:
+Then install one of the two supported provider libraries:
 
 ```bash
 # For ethers.js users
@@ -33,9 +31,7 @@ npm install viem
 
 # Initialization
 
-To get started, first get an API key.
-
-**For quick experimentation** — request a free-tier key in code (valid for 7 days):
+You need an API key. For experiments, request a free-tier key that is valid for 7 days:
 
 ```typescript
 import { OpenSeaSDK } from "@opensea/sdk";
@@ -49,9 +45,9 @@ Or from the shell:
 curl -s -X POST https://api.opensea.io/api/v2/auth/keys | jq -r '.api_key'
 ```
 
-**For production** — create a permanent key at [opensea.io/settings/developer](https://opensea.io/settings/developer). These keys don't expire, get higher rate limits, and can be rotated from your account. See the [API key docs](https://docs.opensea.io/reference/api-keys) for details. Note the terms of use for using API data.
+For production, create a key at [opensea.io/settings/developer](https://opensea.io/settings/developer). These keys don't expire, get higher rate limits, and can be rotated from your account. See the [API key docs](https://docs.opensea.io/reference/api-keys), and note the terms of use for API data.
 
-Then, create a new OpenSeaSDK client using your web3 provider.
+Then create an `OpenSeaSDK` client with your provider.
 
 ## With ethers.js
 
@@ -86,18 +82,18 @@ const publicClient = createPublicClient({
   transport: http("https://eth-mainnet.g.alchemy.com/v2/YOUR_ALCHEMY_API_KEY"),
 });
 
-// Read-only — no transactions:
+// Read-only, no transactions:
 const openseaSDK = new OpenSeaSDK(
   { publicClient },
   { chain: Chain.Mainnet, apiKey: "YOUR_API_KEY" },
 );
 ```
 
-## Wallet
+## Signing transactions
 
-Using a read-only provider won't let you authorize transactions, which are needed when approving and trading assets and currency. To make transactions, you need a signer (ethers) or wallet client (viem).
+A read-only provider can't send transactions, so it can't approve or trade assets. For that, pass a signer (ethers) or wallet client (viem).
 
-### ethers wallet
+### ethers
 
 ```typescript
 import { ethers } from "ethers";
@@ -116,7 +112,7 @@ const openseaSDK = new OpenSeaSDK(walletWithProvider, {
 });
 ```
 
-### viem wallet
+### viem
 
 ```typescript
 import { createPublicClient, createWalletClient, http } from "viem";
@@ -142,6 +138,4 @@ const openseaSDK = new OpenSeaSDK(
 );
 ```
 
-In a browser with web3 or an extension like [MetaMask](https://metamask.io/) or [Coinbase Wallet](https://www.coinbase.com/wallet), you can use `window.ethereum` to access the native provider.
-
-> **⚠️ Security Warning**: While the SDK supports browser-based providers like `window.ethereum`, **you should never include your API key in client-side code**. Exposing your API key in frontend applications allows anyone to extract and abuse it. Instead, use the SDK on a secure backend server and return transaction data to your frontend. See the [README Security Warning](../README.md#security-warning) for the recommended architecture.
+The SDK accepts browser providers such as `window.ethereum` from [MetaMask](https://metamask.io/) or [Coinbase Wallet](https://www.coinbase.com/wallet), but don't put your API key in client-side code: anyone can extract it from a frontend bundle. Run the SDK on your backend and return transaction data to the frontend. The [README security warning](../README.md#security-warning) describes the setup.

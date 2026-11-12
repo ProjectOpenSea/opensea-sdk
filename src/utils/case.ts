@@ -54,7 +54,7 @@ function snakeToCamel(key: string): string {
  * `userID` → `user_i_d`, `NFTContract` → `n_f_t_contract`. This is deliberate
  * (the roundtrip with `camelizeKeysDeep` is consistent under generic rules)
  * but consumers calling `snakeizeKeysDeep` directly should avoid PascalCase
- * acronyms in key names — use `userId` / `nftContract` instead.
+ * acronyms in key names. Use `userId` / `nftContract` instead.
  */
 export function snakeizeKeysDeep<T>(value: T): Snakeize<T> {
   return walkSnake(value) as Snakeize<T>
@@ -94,7 +94,7 @@ type IsUppercaseLetter<Ch extends string> =
  * `"isNsfw"` → `"is_nsfw"`. The inverse of {@link Camelize}.
  *
  * Position 0 is special-cased so that PascalCase or acronym keys (`"URL"`,
- * `"MyKey"`) don't gain a leading underscore — this mirrors the runtime
+ * `"MyKey"`) don't gain a leading underscore, matching the runtime
  * {@link camelToSnake} behavior.
  */
 type CamelToSnakeInner<S extends string> =
@@ -192,7 +192,7 @@ type SnakeToCamel<S extends string> =
  * Recursively rewrites object keys from snake_case to camelCase. Preserves
  * arrays, primitives, and non-plain objects (Date, etc.).
  *
- * SDK consumers see camelCase types even though api-types ships snake_case —
+ * SDK consumers see camelCase types even though api-types ships snake_case;
  * the runtime {@link camelizeKeysDeep} keeps shapes in sync.
  *
  * Reach for this when a response has no dedicated camelized alias in this

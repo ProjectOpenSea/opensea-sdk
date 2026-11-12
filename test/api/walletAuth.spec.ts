@@ -260,8 +260,8 @@ describe("WalletAuthAPI", () => {
 
   it("forwards the request body and returns the response for nft pfp helpers", async () => {
     // camelCase, matching SetNftPfpRequest in the OpenAPI spec. This fixture
-    // used to be snake_case, which is why the body-casing bug went unnoticed —
-    // see walletAuthCasing.spec.ts.
+    // used to be snake_case, which is why the body-casing bug went unnoticed.
+    // See walletAuthCasing.spec.ts.
     const settings = {
       contractAddress: "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
       tokenId: "1",

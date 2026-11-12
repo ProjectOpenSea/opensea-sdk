@@ -178,7 +178,7 @@ export class WalletAuthAPI {
 
   /**
    * `CancelRequest` carries `offererSignature`, which is camelCase on the wire.
-   * It is optional, so snake-casing it didn't fail the request — it just dropped
+   * It is optional, so snake-casing it didn't fail the request; it silently dropped
    * the signature, turning a signed cancel into an unsigned one. Sent verbatim.
    */
   cancelOrder(
@@ -494,7 +494,7 @@ export class WalletAuthAPI {
    * `UpdateProfileSettingsRequest` is camelCase on the wire (`displayName`,
    * `externalUrl`, `profileImageToken`, `bannerImageToken`), so the body is sent
    * verbatim. Snake-casing it silently drops every field except `bio`, which
-   * survives only because it is a single word — the request still returns 200,
+   * survives only because it is a single word. The request still returns 200,
    * so the loss is invisible to the caller.
    */
   updateProfileSettings(body: WalletAuthRequest<"update_profile_settings">) {

@@ -134,9 +134,8 @@ export class ListingsAPI {
 
   /**
    * Get an ordered list of blockchain actions required to create one or more
-   * listings — token approvals + a final action containing the Seaport order
-   * to sign. Useful for clients that prefer the server to compute the
-   * approval graph.
+   * listings: token approvals, then a final action with the Seaport order
+   * to sign. For clients that want the server to compute the approval graph.
    */
   async createListingActions(
     request: CreateListingActionsRequest,

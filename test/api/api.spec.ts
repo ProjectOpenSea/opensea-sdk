@@ -68,7 +68,7 @@ describe("API", () => {
     // The traits payload is keyed by trait name and trait value, not by field
     // name. Camelizing it renames `fur_color` to `furColor`, and the two
     // distinct values below collapse into a single `darkBrown` entry whose
-    // count is wrong — a silent data loss the caller cannot detect.
+    // count is wrong. The caller cannot detect this data loss.
     vi.useRealTimers()
     fetchStub = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
@@ -507,7 +507,7 @@ describe("API", () => {
   })
 
   test("API handles invalid retry-after header gracefully", async () => {
-    // Test the robust header parsing by simulating an invalid retry-after header
+    // Simulate an invalid retry-after header to test fallback parsing
     const rateLimitError = new Error(
       "429 Too Many Requests",
     ) as OpenSeaRateLimitError
@@ -746,7 +746,7 @@ describe("API", () => {
       ]
       expect(url).toBe("https://api.opensea.io/api/v2/auth/keys")
       expect(init.method).toBe("POST")
-      // No api-key header in any casing — endpoint is unauthenticated.
+      // No api-key header in any casing: the endpoint is unauthenticated.
       const headerKeys = Object.keys(init.headers).map(k => k.toLowerCase())
       expect(headerKeys).not.toContain("x-api-key")
       expect(result).toEqual({ apiKey: "test-key-123" })

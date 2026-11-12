@@ -91,7 +91,7 @@ export class EventsAPI {
 }
 
 // Returns `undefined` (not `{}`) when no args were passed so the fetcher
-// receives the same shape as before `traits` existed — preserves the
+// receives the same shape as before `traits` existed, keeping the
 // pre-feature query string for callers that don't set any args.
 function encodeArgs(args?: GetEventsByCollectionArgs) {
   if (!args) return args

@@ -439,10 +439,9 @@ export class FulfillmentManager {
   }
 
   /**
-   * Instead of signing an off-chain order, this method allows you to approve an order
-   * with an onchain transaction.
+   * Approve an order with an onchain transaction instead of an offchain signature.
    * @param order Order to approve
-   * @param domain An optional domain to be hashed and included at the end of fulfillment calldata.  This can be used for onchain order attribution to assist with analytics.
+   * @param domain An optional domain to be hashed and included at the end of fulfillment calldata, used for onchain order attribution in analytics.
    * @returns Transaction hash of the approval transaction
    *
    * @throws Error if the accountAddress is not available through wallet or provider.

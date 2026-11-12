@@ -230,8 +230,8 @@ describe("query arg drift", () => {
         const documented = new Set(documentedQueryParams(path, method))
         // Fields the SDK never puts on the wire for this endpoint, so the server cannot
         // silently ignore them:
-        //   GetTokensArgs.next  — rewritten to `cursor` by `withCursor`.
-        //   GetEventsArgs.chain — stripped by `withoutIgnoredChain`. The field is still valid
+        //   GetTokensArgs.next: rewritten to `cursor` by `withCursor`.
+        //   GetEventsArgs.chain: stripped by `withoutIgnoredChain`. The field is still valid
         //   for `getEventsByAccount`, whose endpoint does document `chain`; this entry is
         //   about the general feed only.
         const NOT_SENT: Record<string, string[]> = {

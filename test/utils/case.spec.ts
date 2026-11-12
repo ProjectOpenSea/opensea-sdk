@@ -90,8 +90,8 @@ describe("snakeizeKeysDeep", () => {
       protocolAddress: "0xseaport",
     }
     expect(snakeizeKeysDeep(order)).toEqual({
-      // The default behavior recursively rewrites everything — this asserts
-      // the dumb mechanical conversion (the opt-out at the callsite is what
+      // The default recursively rewrites everything. This asserts the
+      // plain mechanical conversion (the opt-out at the callsite is what
       // preserves inner Seaport keys, not snakeize itself).
       parameters: { offerer: "0xabc", start_time: "1", end_time: "2" },
       signature: "0xsig",
@@ -102,7 +102,7 @@ describe("snakeizeKeysDeep", () => {
   test("rewrites top-level offererSignature → offerer_signature", () => {
     // Verifies that snakeize correctly rewrites the camelCase top-level keys.
     // The CancelRequest schema actually wants the camelCase form on the wire,
-    // which is why offchainCancelOrder opts out — but the conversion itself
+    // which is why offchainCancelOrder opts out, but the conversion itself
     // is mechanical and snake-correct.
     expect(snakeizeKeysDeep({ offererSignature: "0xsig" })).toEqual({
       offerer_signature: "0xsig",

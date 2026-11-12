@@ -256,7 +256,7 @@ export class NFTsAPI {
   }
 
   /**
-   * Fetch analytics for an NFT — historical sale points used for charting.
+   * Fetch analytics for an NFT: historical sale points for charting.
    */
   async getNFTAnalytics(
     address: string,

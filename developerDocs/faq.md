@@ -15,36 +15,32 @@ hidden: false
 
 ## How do I access the source code?
 
-The source code for the SDK can be found on [GitHub](https://github.com/ProjectOpenSea/opensea-sdk).
+It's on [GitHub](https://github.com/ProjectOpenSea/opensea-sdk).
 
 ## What chains are supported?
 
-See the `Chain` enum in [`src/types.ts`](https://github.com/ProjectOpenSea/opensea-sdk/blob/main/src/types.ts) for a complete list of supported chains.
-
-Please use methods in the v2 API for multichain capabilities.
+See the `Chain` enum in [`src/types.ts`](https://github.com/ProjectOpenSea/opensea-sdk/blob/main/src/types.ts).
 
 ## Why is there no SDK method for the API request I am trying to call?
 
-First, check the [API Reference](api-reference.md) to see all available SDK methods - many OpenSea API v2 endpoints are now supported.
+Check the [API reference](api-reference.md) first. The SDK covers most OpenSea API v2 endpoints.
 
-If the SDK does not currently have a specific API, you can use the generic `get` and `post` methods on the `OpenSeaAPI` class in [`src/api/api.ts`](https://github.com/ProjectOpenSea/opensea-sdk/blob/main/src/api/api.ts) to make any API request. This repository is also open source, so please feel free to create a pull request.
+For anything it doesn't cover, call the generic `get` and `post` methods on `OpenSeaAPI` ([`src/api/api.ts`](https://github.com/ProjectOpenSea/opensea-sdk/blob/main/src/api/api.ts)). Pull requests are welcome.
 
 ## Does the SDK support viem?
 
-Yes. Starting in v10, the SDK ships a dedicated `@opensea/sdk/viem` entry point. Import from that path and pass `{ publicClient }` (read-only) or `{ publicClient, walletClient }` (read + write) instead of an ethers provider/signer. See the [Quick Start Guide](quick-start.md) for full examples.
+Yes, since v10. Import from `@opensea/sdk/viem` and pass `{ publicClient }` for read-only use or `{ publicClient, walletClient }` to send transactions. The [quick start](quick-start.md) has full examples.
 
-**Note on bundle size:** Even when using the viem entry point, ethers will appear in your `node_modules` as a transitive dependency of `@opensea/seaport-js`. Your application code never imports ethers directly, but the SDK uses it internally for Seaport protocol interactions. This is a known tradeoff until seaport-js adds native viem support.
+ethers still ends up in `node_modules` with the viem entry point. `@opensea/seaport-js` only accepts ethers signers and providers, so the SDK depends on ethers and wraps your viem clients in an ethers-compatible signer before calling Seaport. Your own code never has to import ethers.
 
 ## What changed in v10?
 
-Key changes in v10:
-
-- **Viem support** -- new `@opensea/sdk/viem` entry point that accepts `{ publicClient, walletClient }` instead of ethers `Signer | JsonRpcProvider`.
-- **`OrderSide` values** -- changed from `"ask"`/`"bid"` to `"listing"`/`"offer"`.
-- **`BigNumberish` replaced with `Amount`** -- the `Amount` type is `string | number | bigint`.
-- **`Overrides` replaced with `Record<string, unknown>`**.
-- **TypeChain removed** -- contract ABIs are used directly; no generated TypeChain wrappers.
-- **`ethers.FetchRequest` replaced with native `fetch()`** for HTTP calls.
-- **New provider abstraction types** -- `OpenSeaSigner`, `OpenSeaProvider`, `ContractCaller`, `OpenSeaWallet` are exported for custom provider integrations.
-- **`provider` public property removed** -- The `sdk.provider` property (ethers `JsonRpcProvider`) is no longer exposed. If you need direct RPC access, use the provider you passed to the constructor. The SDK's `api` property (`sdk.api`) is still available for API queries.
-- **`estimateGas` utility removed** -- This was an ethers-specific utility. Use your provider's native gas estimation instead.
+- New `@opensea/sdk/viem` entry point that takes `{ publicClient, walletClient }` instead of an ethers `Signer | JsonRpcProvider`.
+- `OrderSide` values changed from `"ask"`/`"bid"` to `"listing"`/`"offer"`.
+- `BigNumberish` is replaced by `Amount` (`string | number | bigint`).
+- `Overrides` is replaced by `Record<string, unknown>`.
+- TypeChain is gone. Contract ABIs are used directly.
+- HTTP calls use native `fetch()` instead of `ethers.FetchRequest`.
+- `OpenSeaSigner`, `OpenSeaProvider`, `ContractCaller`, and `OpenSeaWallet` are exported for custom provider integrations.
+- The public `sdk.provider` property is removed. Use the provider you passed to the constructor for direct RPC access. `sdk.api` is unchanged.
+- The ethers-specific `estimateGas` utility is removed. Use your provider's gas estimation.

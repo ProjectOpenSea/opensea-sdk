@@ -960,7 +960,7 @@ export class OpenSeaAPI {
   }
 
   /**
-   * Gets a paginated list of token groups — equivalent currencies across
+   * Gets a paginated list of token groups: equivalent currencies across
    * chains (e.g. ETH on Ethereum, Base, and Arbitrum share the "eth" group).
    * @param args Optional query parameters (`limit`, `cursor`).
    * @returns The {@link GetTokenGroupsResponse} returned by the API.
@@ -1071,7 +1071,7 @@ export class OpenSeaAPI {
 
   /**
    * Get executable transactions for a token swap. Companion to
-   * {@link OpenSeaAPI.getSwapQuote} — quote first, then execute.
+   * {@link OpenSeaAPI.getSwapQuote}: quote first, then execute.
    * @param request The swap execution request.
    * @returns The {@link SwapExecuteResponse} with transactions and a quote.
    * @deprecated Use `api.tokens.executeSwap()`. Removed in the next major.
@@ -1247,7 +1247,7 @@ export class OpenSeaAPI {
    * Fetch the price history of a token.
    * @param chain Chain the token lives on.
    * @param address Token contract address.
-   * @param args Time-series window — `start_time` required, `end_time` defaults to now.
+   * @param args Time-series window. `start_time` is required; `end_time` defaults to now.
    * @returns The {@link PriceHistoryResponse} returned by the API.
    * @deprecated Use `api.tokens.getTokenPriceHistory()`. Removed in the next major.
    */
@@ -1853,7 +1853,7 @@ export class OpenSeaAPI {
           | undefined
         if (errors?.length !== undefined && errors.length > 0) {
           // Handle both string entries (`["not found"]`) and structured ones
-          // (`[{code: "invalid_param", message: "..."}]`) — String() on an
+          // (`[{code: "invalid_param", message: "..."}]`). String() on an
           // object yields "[object Object]", so JSON-stringify any non-string
           // element individually before joining.
           const errorMessage = Array.isArray(errors)
@@ -1944,7 +1944,7 @@ export class OpenSeaAPI {
   private static readonly MAX_RETRY_AFTER_SECONDS = 300
 
   /**
-   * Parses the retry-after header from the response with robust error handling.
+   * Parses the retry-after header, tolerating missing or malformed values.
    * @param response The HTTP response object from the API
    * @returns The retry-after value in seconds (capped at 5 minutes), or undefined if not present or invalid
    */
@@ -2005,8 +2005,8 @@ export class OpenSeaAPI {
   /**
    * Creates a rate limit error with status code and retry-after information.
    * This is async because it attempts to parse the response body. If the body
-   * is malformed JSON, responseBody will be undefined (intentional — the error
-   * itself is more important than the body).
+   * is malformed JSON, responseBody is undefined (on purpose: the error
+   * matters more than the body).
    * @param response The HTTP response object from the API
    * @returns An enhanced Error object with statusCode, retryAfter and responseBody properties
    */

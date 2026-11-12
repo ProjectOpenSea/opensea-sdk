@@ -166,8 +166,8 @@ export class CollectionsAPI {
   }
 
   /**
-   * Fetch aggregated offer information for a collection — top offers grouped
-   * by price level. Useful for displaying offer-book depth.
+   * Fetch aggregated offers for a collection: top offers grouped by price
+   * level, for displaying offer-book depth.
    */
   async getCollectionOfferAggregates(
     slug: string,

@@ -4,8 +4,8 @@ import { bytesToHex } from "@noble/hashes/utils.js"
 /**
  * EIP-55 checksum an Ethereum address.
  *
- * If the input contains mixed case, it is validated as an existing checksum —
- * an incorrect checksum throws (matching ethers.getAddress behavior).
+ * Mixed-case input is validated as an existing checksum, and an incorrect
+ * checksum throws (matching ethers.getAddress behavior).
  * All-lowercase and all-uppercase inputs are checksummed without validation.
  *
  * @param address The address to checksum (must be a valid 0x-prefixed hex address).

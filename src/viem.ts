@@ -18,7 +18,7 @@
  */
 
 // seaport-js has a hard dependency on ethers, so importing it pulls ethers
-// into the bundle. This is a known tradeoff — see FAQ for details.
+// into the bundle. This is a known tradeoff; see the FAQ.
 import { Seaport } from "@opensea/seaport-js"
 import { OpenSeaAPI } from "./api/api"
 import { createSeaportBridge } from "./provider/seaport-bridge"

@@ -1,5 +1,5 @@
 /**
- * Ethers v6 adapter — wraps ethers Signer/Provider into the SDK's abstract interfaces.
+ * Ethers v6 adapter: wraps an ethers Signer/Provider in the SDK's abstract interfaces.
  */
 import {
   Contract,
