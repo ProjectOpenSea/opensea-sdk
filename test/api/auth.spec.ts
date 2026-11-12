@@ -329,9 +329,9 @@ describe("OpenSeaAuth", () => {
     )
   })
 
-  test("supports the deprecated authBaseUrl alias and trims its slash", async () => {
+  test("trims a trailing slash from apiBaseUrl", async () => {
     fetchSpy.mockResolvedValueOnce(new Response("unavailable", { status: 500 }))
-    const auth = new OpenSeaAuth({ authBaseUrl: "https://api.example.com/" })
+    const auth = new OpenSeaAuth({ apiBaseUrl: "https://api.example.com/" })
     await expect(auth.requestNonce()).rejects.toThrow("Nonce request failed")
     expect(fetchSpy.mock.calls[0][0]).toBe(
       "https://api.example.com/api/v2/auth/siwe/nonce",

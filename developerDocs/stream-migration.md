@@ -4,7 +4,8 @@ The OpenSea Stream client now ships inside `@opensea/sdk` at the
 `@opensea/sdk/stream` subpath. The standalone `@opensea/stream-js` package is
 deprecated and will not receive further releases.
 
-Every event type, payload shape, and `on*` method is unchanged. Most projects
+Every event type, payload shape, and `on*` method is unchanged, apart from
+`onItemReceivedOffer`, which never received an event (see below). Most projects
 need to change two lines.
 
 ## The short version
@@ -68,8 +69,28 @@ const client = new OpenSeaStreamClient({
 
 ### `apiKey` replaces `token`
 
-`token` still works and behaves identically, but it is deprecated. The new name
-matches `OpenSeaAPIConfig.apiKey` used everywhere else in the SDK.
+Pass the key as `apiKey`, the name `OpenSeaAPIConfig.apiKey` uses everywhere
+else in the SDK. `token` is not accepted: a config that sets only `token`
+throws "An OpenSea API key is required".
+
+### `onItemReceivedOffer` is gone
+
+The Stream API never emitted `item_received_offer`, so a handler registered
+with `onItemReceivedOffer` could not fire. Item-level offers arrive as
+`item_received_bid`. Use `onItemReceivedBid`, `EventType.ITEM_RECEIVED_BID`,
+`ItemReceivedBidEvent` and `ItemReceivedBidEventPayload` in place of
+`onItemReceivedOffer`, `EventType.ITEM_RECEIVED_OFFER`,
+`ItemReceivedOfferEvent` and `ItemReceivedOfferEventPayload`:
+
+```typescript
+import { OpenSeaStreamClient } from "@opensea/sdk/stream";
+
+const client = new OpenSeaStreamClient({ apiKey: "YOUR_API_KEY" });
+
+client.onItemReceivedBid("doodles-official", event => {
+  console.log(event.payload.base_price);
+});
+```
 
 ### `connectOptions` is a smaller, SDK-owned type
 
@@ -170,7 +191,8 @@ seaport, and no third-party runtime code.
   `onItemMetadataUpdated`, `onItemCancelled`, `onItemReceivedBid`,
   `onCollectionOffer`, `onTraitOffer`,
   `onOrderInvalidate`, `onOrderRevalidate`, and `onEvents`.
-- Every event and payload type, unchanged field for field.
+- Every event and payload type other than the `ItemReceivedOffer` ones,
+  unchanged field for field.
 - `EventType`, `LogLevel`, `Network`, `OnClientEvent`, and `Callback`.
 - `connect()`, `disconnect()`, the `onError` and `onEvent` callbacks, and the
   `"*"` wildcard for all collections.

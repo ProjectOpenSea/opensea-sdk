@@ -25,7 +25,7 @@ describe("fetch injection", () => {
     const globalFetch = vi.spyOn(globalThis, "fetch")
 
     const api = new OpenSeaAPI({ apiKey: "key", fetch: injected })
-    await api.getCollection("azuki")
+    await api.collections.getCollection("azuki")
 
     expect(injected).toHaveBeenCalledTimes(1)
     expect(String(injected.mock.calls[0][0])).toBe(
@@ -42,7 +42,7 @@ describe("fetch injection", () => {
       authToken: "jwt",
       fetch: injected,
     })
-    await api.getCollection("azuki")
+    await api.collections.getCollection("azuki")
 
     const init = injected.mock.calls[0][1] as {
       headers: Record<string, string>
@@ -58,7 +58,7 @@ describe("fetch injection", () => {
       .mockResolvedValue(ok({ collection: "from-cache", name: "Cached" }))
 
     const api = new OpenSeaAPI({ apiKey: "key", fetch: injected })
-    const result = await api.getCollection("azuki")
+    const result = await api.collections.getCollection("azuki")
 
     expect(result.collection).toBe("from-cache")
   })
@@ -76,9 +76,11 @@ describe("fetch injection", () => {
 
     const api = new OpenSeaAPI({ apiKey: "key", fetch: receiverStrict })
 
-    await expect(api.getCollection("azuki")).resolves.toMatchObject({
-      collection: "azuki",
-    })
+    await expect(api.collections.getCollection("azuki")).resolves.toMatchObject(
+      {
+        collection: "azuki",
+      },
+    )
   })
 
   test("does not clobber the receiver of a deliberately bound transport", async () => {
@@ -92,9 +94,11 @@ describe("fetch injection", () => {
 
     const api = new OpenSeaAPI({ apiKey: "key", fetch: bound })
 
-    await expect(api.getCollection("azuki")).resolves.toMatchObject({
-      collection: "azuki",
-    })
+    await expect(api.collections.getCollection("azuki")).resolves.toMatchObject(
+      {
+        collection: "azuki",
+      },
+    )
   })
 
   test("falls back to the global fetch when none is injected", async () => {
@@ -103,7 +107,7 @@ describe("fetch injection", () => {
       .mockResolvedValue(ok({ collection: "azuki" }))
 
     const api = new OpenSeaAPI({ apiKey: "key" })
-    await api.getCollection("azuki")
+    await api.collections.getCollection("azuki")
 
     expect(globalFetch).toHaveBeenCalledTimes(1)
   })
@@ -113,7 +117,9 @@ describe("fetch injection", () => {
 
     const api = new OpenSeaAPI({ apiKey: "key", fetch: injected })
 
-    await expect(api.getCollection("azuki")).rejects.toThrow("transport down")
+    await expect(api.collections.getCollection("azuki")).rejects.toThrow(
+      "transport down",
+    )
   })
 
   describe("requestInstantApiKey", () => {

@@ -5,7 +5,6 @@ import type {
   AuthNonceResponse,
   AuthSigner,
   AuthToken,
-  AuthTokenResponse,
   OpenSeaAuthConfig,
 } from "./types"
 
@@ -30,7 +29,6 @@ export type {
   AuthNonceResponse,
   AuthSigner,
   AuthToken,
-  AuthTokenResponse,
   OpenSeaAuthConfig,
 }
 
@@ -85,11 +83,10 @@ export class OpenSeaAuth {
   private sessionCookies: string | undefined
 
   constructor(config: OpenSeaAuthConfig = {}) {
-    this.apiBaseUrl = (
-      config.apiBaseUrl ??
-      config.authBaseUrl ??
-      DEFAULT_API_BASE_URL
-    ).replace(/\/$/, "")
+    this.apiBaseUrl = (config.apiBaseUrl ?? DEFAULT_API_BASE_URL).replace(
+      /\/$/,
+      "",
+    )
     // Stored as given, including undefined: fetchWith falls back to globalThis.fetch at call
     // time, so a caller who swaps globalThis.fetch after construction still takes effect.
     this.fetchImpl = config.fetch

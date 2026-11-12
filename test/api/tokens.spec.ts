@@ -73,19 +73,6 @@ describe("API: TokensAPI", () => {
       expect(mockGet.mock.calls[0][1]).toEqual({ limit: 10 })
     })
 
-    test("fetches trending tokens with pagination cursor", async () => {
-      const mockResponse: GetTrendingTokensResponse = {
-        tokens: [],
-        next: "cursor-456",
-      }
-
-      mockGet.mockResolvedValue(mockResponse)
-
-      await tokensAPI.getTrendingTokens({ next: "cursor-123" })
-
-      expect(mockGet.mock.calls[0][1]).toEqual({ cursor: "cursor-123" })
-    })
-
     test("sends cursor when the caller passes it directly", async () => {
       mockGet.mockResolvedValue({ tokens: [], next: undefined })
 
@@ -94,30 +81,7 @@ describe("API: TokensAPI", () => {
       expect(mockGet.mock.calls[0][1]).toEqual({ cursor: "cursor-direct" })
     })
 
-    test.each([
-      ["an empty string", ""],
-      ["undefined", undefined],
-    ])("strips the deprecated next when it is %s", async (_label, next) => {
-      mockGet.mockResolvedValue({ tokens: [], next: undefined })
-
-      // A truthiness check would leave `next: ""` on the wire as an undocumented parameter.
-      await tokensAPI.getTrendingTokens({ limit: 5, next })
-
-      expect(mockGet.mock.calls[0][1]).toEqual({ limit: 5 })
-    })
-
-    test("prefers an explicit cursor over the deprecated next", async () => {
-      mockGet.mockResolvedValue({ tokens: [], next: undefined })
-
-      await tokensAPI.getTrendingTokens({
-        cursor: "wins",
-        next: "loses",
-      })
-
-      expect(mockGet.mock.calls[0][1]).toEqual({ cursor: "wins" })
-    })
-
-    test("fetches trending tokens with limit and next", async () => {
+    test("fetches trending tokens with limit and cursor", async () => {
       const mockResponse: GetTrendingTokensResponse = {
         tokens: [],
         next: undefined,
@@ -125,7 +89,7 @@ describe("API: TokensAPI", () => {
 
       mockGet.mockResolvedValue(mockResponse)
 
-      await tokensAPI.getTrendingTokens({ limit: 5, next: "cursor-abc" })
+      await tokensAPI.getTrendingTokens({ limit: 5, cursor: "cursor-abc" })
 
       expect(mockGet.mock.calls[0][1]).toEqual({
         limit: 5,
@@ -197,7 +161,7 @@ describe("API: TokensAPI", () => {
 
       mockGet.mockResolvedValue(mockResponse)
 
-      await tokensAPI.getTopTokens({ next: "cursor-123" })
+      await tokensAPI.getTopTokens({ cursor: "cursor-123" })
 
       expect(mockGet.mock.calls[0][1]).toEqual({ cursor: "cursor-123" })
     })

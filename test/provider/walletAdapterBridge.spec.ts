@@ -157,10 +157,12 @@ function setup() {
   const provider = new StubProvider(key.address)
   const signer = walletAdapterToEthersSigner(adapter, provider)
   const sdk = new OpenSeaSDK(signer, { chain: CHAIN, apiKey: "test" })
-  vi.spyOn(sdk.api, "getNFT").mockResolvedValue({
+  vi.spyOn(sdk.api.nfts, "getNFT").mockResolvedValue({
     nft: { ...mockNFT, contract: NFT_CONTRACT, identifier: "1" },
   })
-  vi.spyOn(sdk.api, "getCollection").mockResolvedValue(mockCollection)
+  vi.spyOn(sdk.api.collections, "getCollection").mockResolvedValue(
+    mockCollection,
+  )
 
   return {
     key,
@@ -202,7 +204,7 @@ describe("OpenSeaSDK with walletAdapterToEthersSigner", () => {
       setup()
     provider.nftApproved = false
     const postListing = vi
-      .spyOn(sdk.api, "postListing")
+      .spyOn(sdk.api.orders, "postListing")
       .mockResolvedValue({} as Listing)
 
     await sdk.createListing({
@@ -246,7 +248,7 @@ describe("OpenSeaSDK with walletAdapterToEthersSigner", () => {
   test("createOffer signs a WETH offer through the adapter", async () => {
     const { key, signer, sdk, typedData, signatures, transactions } = setup()
     const postOffer = vi
-      .spyOn(sdk.api, "postOffer")
+      .spyOn(sdk.api.orders, "postOffer")
       .mockResolvedValue({} as never)
 
     await sdk.createOffer({
@@ -281,7 +283,7 @@ describe("OpenSeaSDK with walletAdapterToEthersSigner", () => {
   test("fulfillOrder sends the API's fulfillment transaction through the adapter", async () => {
     const { signer, sdk, transactions } = setup()
     const response = camelizeKeysDeep(basicNative.response)
-    vi.spyOn(sdk.api, "generateFulfillmentData").mockResolvedValue(
+    vi.spyOn(sdk.api.orders, "generateFulfillmentData").mockResolvedValue(
       response as never,
     )
     const { transaction } = response.fulfillmentData
@@ -311,7 +313,7 @@ describe("OpenSeaSDK with walletAdapterToEthersSigner", () => {
   test("cancelOrder sends Seaport's cancel through the adapter", async () => {
     const { key, signer, sdk, transactions } = setup()
     const postListing = vi
-      .spyOn(sdk.api, "postListing")
+      .spyOn(sdk.api.orders, "postListing")
       .mockResolvedValue({} as Listing)
     const accountAddress = await signer.getAddress()
     await sdk.createListing({
@@ -340,7 +342,7 @@ describe("OpenSeaSDK with walletAdapterToEthersSigner", () => {
   test("offchainCancelOrder signs the OrderHash struct through the adapter", async () => {
     const { key, sdk, typedData, signatures } = setup()
     const offchainCancel = vi
-      .spyOn(sdk.api, "offchainCancelOrder")
+      .spyOn(sdk.api.orders, "offchainCancelOrder")
       .mockResolvedValue({} as never)
     const orderHash = `0x${"12".repeat(32)}`
 

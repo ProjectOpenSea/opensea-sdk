@@ -50,13 +50,6 @@ export interface LinkWalletWithSiwxOptions
     CreateSiwxMessageOptions,
     "address" | "chainId" | "nonce" | "statement"
   > {
-  /**
-   * @deprecated Ignored. The statement is issued by the API together with the wallet-link nonce
-   * and signed verbatim, so a caller-supplied statement can no longer be used.
-   */
-  statement?: string
-  /** @deprecated Nonces now come from apiBaseUrl. */
-  authBaseUrl?: string
   apiBaseUrl?: string
   apiKey?: string
   authToken: string
@@ -349,7 +342,7 @@ export async function requestWalletLinkNonce(
  * Fetch a wallet-link nonce, sign the SIWX message, and submit the wallet-link request.
  *
  * The message carries the nonce and statement issued by
- * {@link requestWalletLinkNonce}; `options.statement` is ignored.
+ * {@link requestWalletLinkNonce}.
  */
 export async function linkWalletWithSiwx(
   signer: AuthSigner,

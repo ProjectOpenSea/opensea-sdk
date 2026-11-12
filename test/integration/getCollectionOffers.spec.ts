@@ -8,7 +8,7 @@ describe("SDK: getCollectionOffers", () => {
     const slug = "cool-cats-nft"
     const response = await getSdkForChain(
       Chain.Mainnet,
-    ).api.getCollectionOffers(slug)
+    ).api.offers.getCollectionOffers(slug)
 
     expect(response, "Response should not be null").toBeTruthy()
     expect(response.offers, "Collection offers should not be null").toBeTruthy()

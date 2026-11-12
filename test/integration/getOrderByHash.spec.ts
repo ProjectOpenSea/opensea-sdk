@@ -16,7 +16,7 @@ describe("SDK: getOrderByHash", () => {
     const slug = "boredapeyachtclub"
 
     // First get an offer to get its hash and protocol address
-    const offersResponse = await sdk.api.getAllOffers(slug)
+    const offersResponse = await sdk.api.offers.getAllOffers(slug)
     expect(offersResponse.offers.length).toBeGreaterThan(0)
 
     const offer = offersResponse.offers[0]
@@ -25,7 +25,10 @@ describe("SDK: getOrderByHash", () => {
     expect(orderHash, "EVM offers should have an order hash").toBeTruthy()
 
     // Now fetch the same order by hash
-    const response = await sdk.api.getOrderByHash(orderHash!, protocolAddress)
+    const response = await sdk.api.orders.getOrderByHash(
+      orderHash!,
+      protocolAddress,
+    )
 
     expect(response, "Response should not be null").toBeTruthy()
     expect(response.orderHash).toBe(orderHash)
@@ -48,7 +51,7 @@ describe("SDK: getOrderByHash", () => {
     const slug = "boredapeyachtclub"
 
     // First get a listing to get its hash and protocol address
-    const listingsResponse = await sdk.api.getAllListings(slug)
+    const listingsResponse = await sdk.api.listings.getAllListings(slug)
     expect(listingsResponse.listings.length).toBeGreaterThan(0)
 
     const listing = listingsResponse.listings[0]
@@ -57,7 +60,10 @@ describe("SDK: getOrderByHash", () => {
     expect(orderHash, "EVM listings should have an order hash").toBeTruthy()
 
     // Now fetch the same order by hash
-    const response = await sdk.api.getOrderByHash(orderHash!, protocolAddress)
+    const response = await sdk.api.orders.getOrderByHash(
+      orderHash!,
+      protocolAddress,
+    )
 
     expect(response).toBeTruthy()
     expect(response.orderHash).toBe(orderHash)
@@ -76,14 +82,14 @@ describe("SDK: getOrderByHash", () => {
     const slug = "boredapeyachtclub"
 
     // Get an offer
-    const offersResponse = await sdk.api.getAllOffers(slug)
+    const offersResponse = await sdk.api.offers.getAllOffers(slug)
     expect(offersResponse.offers.length).toBeGreaterThan(0)
 
     const offer = offersResponse.offers[0]
     expect(offer.orderHash, "EVM offers should have an order hash").toBeTruthy()
 
     // Fetch by hash
-    const response = await sdk.api.getOrderByHash(
+    const response = await sdk.api.orders.getOrderByHash(
       offer.orderHash!,
       offer.protocolAddress!,
     )

@@ -1,6 +1,6 @@
 {
   "name": "@opensea/sdk",
-  "version": "13.0.6",
+  "version": "14.0.0",
   "description": "TypeScript SDK for the OpenSea marketplace helps developers build new experiences using NFTs, tokens, and our marketplace data",
   "license": "MIT",
   "author": "OpenSea Developers",
@@ -60,7 +60,7 @@
     }
   },
   "devDependencies": {
-    "@opensea/wallet-adapters": "^1.2.4",
+    "@opensea/wallet-adapters": "^2.0.0",
     "@types/node": "^25.4.0",
     "@vitest/coverage-v8": "^3.2.4",
     "concurrently": "^9.2.1",

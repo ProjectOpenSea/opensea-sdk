@@ -40,11 +40,28 @@ The namespaces are `accounts`, `assets`, `chains`, `collections`, `drops`, `even
 `nfts`, `offers`, `orders`, `signals`, `tokens`, `tools` (beta), `transactions` and `walletAuth`. Search is the exception and
 stays flat, as `sdk.api.search(args)`, because `SearchAPI`'s only method is also called `search`.
 
-The flat equivalents (`sdk.api.getCollection(...)`) still work and are deprecated for removal in the
-next major. Each carries a `@deprecated` tag naming its replacement, so your editor will point you
-at the namespaced call. Four of them differ in name as well as shape:
+Version 14 removed the flat equivalents such as `sdk.api.getCollection(...)`. Each one moved to a
+namespace under the same name and with the same parameters, so `sdk.api.getCollection(slug)`
+becomes `sdk.api.collections.getCollection(slug)`:
 
-| Deprecated | Replacement |
+| Namespace | Methods |
+| --- | --- |
+| `api.accounts` | `getAccount`, `getAccountTokens`, `getAgentProfileRelationships`, `getPaymentToken`, `getPortfolioHistory`, `getPortfolioStats`, `getProfileCollections`, `getProfileFavorites`, `getProfileListings`, `getProfileOffers`, `getProfileOffersReceived`, `getWalletClosedPositions`, `getWalletPnl`, `getWalletTokenTransfers`, `resolveAccount` |
+| `api.assets` | `transferAssets` |
+| `api.chains` | `getChains` |
+| `api.collections` | `getCollection`, `getCollectionFloorPrices`, `getCollectionHolders`, `getCollectionOfferAggregates`, `getCollectionStats`, `getCollectionTraitFloors`, `getCollections`, `getCollectionsBatch`, `getTopCollections`, `getTraits`, `getTrendingCollections` |
+| `api.drops` | `deployDropContract`, `getDrop`, `getDrops` |
+| `api.events` | `getEvents`, `getEventsByAccount`, `getEventsByCollection`, `getEventsByNFT` |
+| `api.listings` | `createListingActions`, `createListingFulfillmentActions`, `getAllListings`, `getBestListing`, `getBestListings`, `getCrossChainFulfillmentData`, `sweepCollection` |
+| `api.nfts` | `getContract`, `getNFT`, `getNFTAnalytics`, `getNFTCollection`, `getNFTMetadata`, `getNFTOwners`, `getNFTsBatch`, `getNFTsByAccount`, `getNFTsByCollection`, `getNFTsByContract`, `refreshNFTMetadata` |
+| `api.offers` | `buildOffer`, `createOfferActions`, `createOfferFulfillmentActions`, `getAllOffers`, `getBestOffer`, `getCollectionOffers`, `getOffersByNFT`, `getTraitOffers`, `postCollectionOffer` |
+| `api.orders` | `createCancelOrderActions`, `generateFulfillmentData`, `getOrderByHash`, `offchainCancelOrder`, `postListing`, `postOffer` |
+| `api.tokens` | `executeSwap`, `getAccountTokenActivity`, `getSwapQuote`, `getToken`, `getTokenActivity`, `getTokenActivityStats`, `getTokenGroup`, `getTokenGroups`, `getTokenHolders`, `getTokenLiquidityPools`, `getTokenOhlcv`, `getTokenPriceHistory`, `getTokensBatch`, `getTopTokens`, `getTrendingTokens` |
+| `api.transactions` | `getTransactionReceipt` |
+
+Four were renamed as well as moved:
+
+| Removed | Replacement |
 | --- | --- |
 | `api.buildDropMintTransaction` | `api.drops.buildMintTransaction` |
 | `api.buildCrossChainDropMintTransactions` | `api.drops.buildCrossChainMintTransactions` |
@@ -462,12 +479,12 @@ Rank collections by how many accounts wear one of their verified NFTs as a profi
 ```typescript
 const { collections } = await openseaSDK.api.collections.getTopPfpCollections({
   limit: 10,
-  chain: Chain.Base,
+  chains: [Chain.Base],
 });
 // collections: [{ rank: 1, pfpWearerCount: 1234, collection: { ... } }, ...]
 ```
 
-**Parameters:** `GetTopPfpCollectionsArgs`: `limit` (1-50, required) and an optional `chain`. Omit `chain` to rank across every chain.
+**Parameters:** `GetTopPfpCollectionsArgs`: `limit` (1-50, required) and an optional `chains` array. Omit `chains` to rank across every chain. Other optional filters are `categories`, `minFloorPriceUsd` and `maxFloorPriceUsd`.
 
 **Returns:** `TopPfpCollectionsResponse` with `collections`.
 
@@ -1308,7 +1325,7 @@ tokens.forEach((token) => {
 | Parameter | Type   | Required | Description                             |
 | --------- | ------ | -------- | --------------------------------------- |
 | `limit`   | number | No       | Number of tokens to return              |
-| `next`    | string | No       | Pagination cursor from previous request |
+| `cursor`  | string | No       | The `next` value from the previous page |
 
 **Returns:** `GetTrendingTokensResponse` containing:
 
@@ -1336,7 +1353,7 @@ tokens.forEach((token) => {
 | Parameter | Type   | Required | Description                             |
 | --------- | ------ | -------- | --------------------------------------- |
 | `limit`   | number | No       | Number of tokens to return              |
-| `next`    | string | No       | Pagination cursor from previous request |
+| `cursor`  | string | No       | The `next` value from the previous page |
 
 **Returns:** `GetTopTokensResponse` containing:
 

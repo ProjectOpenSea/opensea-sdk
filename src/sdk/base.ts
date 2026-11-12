@@ -389,7 +389,7 @@ export class BaseOpenSeaSDK {
     paymentTokenAddress: string
     recipientAddress?: string
   }) {
-    return this.api.getCrossChainFulfillmentData({
+    return this.api.listings.getCrossChainFulfillmentData({
       listings: options.listings.map(l => ({
         hash: l.hash,
         chain: l.chain,
@@ -606,7 +606,8 @@ export class BaseOpenSeaSDK {
       if (tokenAddress in this._cachedPaymentTokenDecimals) {
         decimals = this._cachedPaymentTokenDecimals[tokenAddress]
       } else {
-        const paymentToken = await this.api.getPaymentToken(tokenAddress)
+        const paymentToken =
+          await this.api.accounts.getPaymentToken(tokenAddress)
         this._cachedPaymentTokenDecimals[tokenAddress] = paymentToken.decimals
         decimals = paymentToken.decimals
       }

@@ -72,7 +72,7 @@ export class CancellationManager {
     } else if (orderHash) {
       // Fetch order from API using order hash
       requireValidProtocol(protocolAddress)
-      const fetchedOrder = await this.context.api.getOrderByHash(
+      const fetchedOrder = await this.context.api.orders.getOrderByHash(
         orderHash,
         protocolAddress,
         this.context.chain,
@@ -208,7 +208,7 @@ export class CancellationManager {
       // Fetch orders from the API using order hashes
       const fetchedOrders: (Offer | Listing)[] = []
       for (const hash of orderHashes) {
-        const fetched = await this.context.api.getOrderByHash(
+        const fetched = await this.context.api.orders.getOrderByHash(
           hash,
           protocolAddress,
           this.context.chain,
@@ -371,7 +371,7 @@ export class CancellationManager {
       )
     }
     try {
-      return await this.context.api.offchainCancelOrder(
+      return await this.context.api.orders.offchainCancelOrder(
         protocolAddress,
         orderHash,
         chain,

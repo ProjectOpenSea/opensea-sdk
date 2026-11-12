@@ -235,14 +235,17 @@ export class CollectionsAPI {
   /**
    * Fetch collections ranked by how many accounts wear one of their verified NFTs as a profile
    * picture. Pass `args.chains` to count wearers on those chains only, or omit it to rank across
-   * every chain. `args.chain` is deprecated: use `chains`.
+   * every chain.
    */
   async getTopPfpCollections(
     args: GetTopPfpCollectionsArgs,
   ): Promise<TopPfpCollectionsResponse> {
+    const { chain: _chain, ...query } = args as GetTopPfpCollectionsArgs & {
+      chain?: unknown
+    }
     return this.fetcher.get<TopPfpCollectionsResponse>(
       getTopPfpCollectionsPath(),
-      args,
+      query,
     )
   }
 }

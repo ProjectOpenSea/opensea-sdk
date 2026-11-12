@@ -28,8 +28,6 @@ export interface AuthenticateOptions {
 export interface OpenSeaAuthConfig {
   /** OpenSea API base URL. Defaults to `https://api.opensea.io`. */
   apiBaseUrl?: string
-  /** @deprecated Use `apiBaseUrl`. */
-  authBaseUrl?: string
   /**
    * Transport used for every request this instance makes, defaulting to the global `fetch`.
    * Same seam as {@link OpenSeaAPIConfig.fetch}, so one wrapper can cover the auth flow and the
@@ -49,17 +47,6 @@ export interface OpenSeaAuthConfig {
 export interface AuthSigner {
   getAddress(): Promise<string>
   signMessage(message: string): Promise<string>
-}
-
-/**
- * Legacy auth response shape retained for source compatibility.
- * @deprecated The public wallet-auth API now returns scoped-token and exchange responses.
- */
-export interface AuthTokenResponse {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  scopes: string[]
 }
 
 /**

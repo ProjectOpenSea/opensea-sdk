@@ -18,13 +18,13 @@ describe("SDK: misc", () => {
   })
 
   test("Instance exposes API methods", () => {
-    expect(typeof sdk.api.getOrderByHash).toBe("function")
-    expect(typeof sdk.api.postListing).toBe("function")
-    expect(typeof sdk.api.postOffer).toBe("function")
-    expect(typeof sdk.api.sweepCollection).toBe("function")
-    expect(typeof sdk.api.getOffersByNFT).toBe("function")
-    expect(typeof sdk.api.executeSwap).toBe("function")
-    expect(typeof sdk.api.getTransactionReceipt).toBe("function")
+    expect(typeof sdk.api.orders.getOrderByHash).toBe("function")
+    expect(typeof sdk.api.orders.postListing).toBe("function")
+    expect(typeof sdk.api.orders.postOffer).toBe("function")
+    expect(typeof sdk.api.listings.sweepCollection).toBe("function")
+    expect(typeof sdk.api.offers.getOffersByNFT).toBe("function")
+    expect(typeof sdk.api.tokens.executeSwap).toBe("function")
+    expect(typeof sdk.api.transactions.getTransactionReceipt).toBe("function")
   })
 
   test("Checks that a non-shared storefront address is returned unchanged", async () => {

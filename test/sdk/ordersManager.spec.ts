@@ -114,37 +114,45 @@ describe("SDK: OrdersManager", () => {
 
     // Mock API
     mockAPI = {
-      getNFT: vi.fn().mockResolvedValue({ nft: mockNFT }),
-      getCollection: vi.fn().mockResolvedValue(mockCollection),
-      postOffer: vi.fn().mockResolvedValue({
-        orderHash: "0xOrderHash",
-        protocolData: mockOrder,
-        protocolAddress: "0xProtocol",
-      }),
-      postListing: vi.fn().mockResolvedValue({
-        orderHash: "0xOrderHash",
-        protocolData: mockOrder,
-        protocolAddress: "0xProtocol",
-      }),
-      buildOffer: vi.fn().mockResolvedValue({
-        partialParameters: {
-          consideration: [
-            {
-              itemType: 2,
-              token: "0xNFTContract",
-              identifierOrCriteria: "0",
-              amount: "1",
-              endAmount: "1",
-            },
-          ],
-          zone: "0xSignedZone",
-        },
-        criteria: { collection: { slug: "test-collection" } },
-      }),
-      postCollectionOffer: vi.fn().mockResolvedValue({
-        protocolData: mockOrder,
-        protocolAddress: "0xProtocol",
-      }),
+      nfts: {
+        getNFT: vi.fn().mockResolvedValue({ nft: mockNFT }),
+      },
+      collections: {
+        getCollection: vi.fn().mockResolvedValue(mockCollection),
+      },
+      orders: {
+        postOffer: vi.fn().mockResolvedValue({
+          orderHash: "0xOrderHash",
+          protocolData: mockOrder,
+          protocolAddress: "0xProtocol",
+        }),
+        postListing: vi.fn().mockResolvedValue({
+          orderHash: "0xOrderHash",
+          protocolData: mockOrder,
+          protocolAddress: "0xProtocol",
+        }),
+      },
+      offers: {
+        buildOffer: vi.fn().mockResolvedValue({
+          partialParameters: {
+            consideration: [
+              {
+                itemType: 2,
+                token: "0xNFTContract",
+                identifierOrCriteria: "0",
+                amount: "1",
+                endAmount: "1",
+              },
+            ],
+            zone: "0xSignedZone",
+          },
+          criteria: { collection: { slug: "test-collection" } },
+        }),
+        postCollectionOffer: vi.fn().mockResolvedValue({
+          protocolData: mockOrder,
+          protocolAddress: "0xProtocol",
+        }),
+      },
     }
 
     // Mock callback functions
@@ -190,10 +198,10 @@ describe("SDK: OrdersManager", () => {
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
       expect(mockRequireAccountIsAvailable.mock.calls[0][0]).toBe("0xBuyer")
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(1)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(1)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postOffer).toHaveBeenCalledTimes(1)
+      expect(mockAPI.orders.postOffer).toHaveBeenCalledTimes(1)
       expect(result.orderHash).toBe("0xOrderHash")
     })
 
@@ -266,7 +274,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's required zone when specified", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         requiredZone: "0xRequiredZone",
       })
@@ -282,7 +290,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's offer pricing currency when no explicit token", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -306,7 +314,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("falls back to chain default when no pricing currencies", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: undefined,
       })
@@ -325,7 +333,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("normalizes native Stable Chain offer currency to USDT0", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -354,7 +362,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("normalizes native Arc offer currency to USDC", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -381,7 +389,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("passes through an explicit Stable Chain offer mirror", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -410,7 +418,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("falls back to the Stable Chain offer mirror without pricing currencies", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: undefined,
       })
@@ -431,7 +439,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("falls back to the Stable Chain offer mirror for a null currency address", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -469,10 +477,10 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(1)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(1)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postListing).toHaveBeenCalledTimes(1)
+      expect(mockAPI.orders.postListing).toHaveBeenCalledTimes(1)
       expect(result.orderHash).toBe("0xOrderHash")
     })
 
@@ -505,7 +513,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("creates listing with optional creator fees", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         fees: [
           { recipient: "0xCreator", fee: 250, required: true },
@@ -536,7 +544,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's required zone when specified", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         requiredZone: "0xRequiredZone",
       })
@@ -563,7 +571,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's listing pricing currency when no explicit token", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           listingCurrency: {
@@ -635,10 +643,10 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(1)
-      expect(mockAPI.buildOffer).toHaveBeenCalledTimes(1)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(1)
+      expect(mockAPI.offers.buildOffer).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postCollectionOffer).toHaveBeenCalledTimes(1)
+      expect(mockAPI.offers.postCollectionOffer).toHaveBeenCalledTimes(1)
       expect(result).not.toBeNull()
     })
 
@@ -651,8 +659,8 @@ describe("SDK: OrdersManager", () => {
         offerProtectionEnabled: true,
       })
 
-      expect(mockAPI.buildOffer).toHaveBeenCalledTimes(1)
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      expect(mockAPI.offers.buildOffer).toHaveBeenCalledTimes(1)
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[3]).toBe(true) // offerProtectionEnabled
     })
 
@@ -665,7 +673,7 @@ describe("SDK: OrdersManager", () => {
         offerProtectionEnabled: false,
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[3]).toBe(false)
     })
 
@@ -679,11 +687,11 @@ describe("SDK: OrdersManager", () => {
         traitValue: "Blue",
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[4]).toBe("Background")
       expect(buildOfferArgs[5]).toBe("Blue")
 
-      const postOfferArgs = mockAPI.postCollectionOffer.mock.calls[0]
+      const postOfferArgs = mockAPI.offers.postCollectionOffer.mock.calls[0]
       expect(postOfferArgs[2]).toBe("Background")
       expect(postOfferArgs[3]).toBe("Blue")
     })
@@ -702,10 +710,10 @@ describe("SDK: OrdersManager", () => {
         traits,
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[6]).toEqual(traits)
 
-      const postOfferArgs = mockAPI.postCollectionOffer.mock.calls[0]
+      const postOfferArgs = mockAPI.offers.postCollectionOffer.mock.calls[0]
       expect(postOfferArgs[4]).toEqual(traits)
     })
 
@@ -747,7 +755,7 @@ describe("SDK: OrdersManager", () => {
         quantity: 5,
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[1]).toBe(5)
     })
 
@@ -770,7 +778,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's offer pricing currency", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -795,7 +803,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("falls back to chain default when no pricing currencies", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: undefined,
       })
@@ -815,7 +823,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("normalizes native Stable Chain offer currency to USDT0", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -845,7 +853,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("passes through an explicit Stable Chain offer mirror", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -875,7 +883,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("falls back to the Stable Chain offer mirror without pricing currencies", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: undefined,
       })
@@ -922,10 +930,10 @@ describe("SDK: OrdersManager", () => {
         numericTraits,
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[7]).toEqual(numericTraits)
 
-      const postOfferArgs = mockAPI.postCollectionOffer.mock.calls[0]
+      const postOfferArgs = mockAPI.offers.postCollectionOffer.mock.calls[0]
       expect(postOfferArgs[5]).toEqual(numericTraits)
     })
 
@@ -942,11 +950,11 @@ describe("SDK: OrdersManager", () => {
         numericTraits,
       })
 
-      const buildOfferArgs = mockAPI.buildOffer.mock.calls[0]
+      const buildOfferArgs = mockAPI.offers.buildOffer.mock.calls[0]
       expect(buildOfferArgs[6]).toEqual(traits)
       expect(buildOfferArgs[7]).toEqual(numericTraits)
 
-      const postOfferArgs = mockAPI.postCollectionOffer.mock.calls[0]
+      const postOfferArgs = mockAPI.offers.postCollectionOffer.mock.calls[0]
       expect(postOfferArgs[4]).toEqual(traits)
       expect(postOfferArgs[5]).toEqual(numericTraits)
     })
@@ -961,8 +969,8 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(1)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(1)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
       expect(result).toEqual(mockOrderComponents)
     })
@@ -990,8 +998,8 @@ describe("SDK: OrdersManager", () => {
         amount: "1000000000000000000",
       })
 
-      expect(mockAPI.postOffer).not.toHaveBeenCalled()
-      expect(mockAPI.postListing).not.toHaveBeenCalled()
+      expect(mockAPI.orders.postOffer).not.toHaveBeenCalled()
+      expect(mockAPI.orders.postListing).not.toHaveBeenCalled()
     })
 
     test("runs approvals but does not request a signature", async () => {
@@ -1015,8 +1023,8 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(1)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(1)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
       expect(result).toEqual(mockOrderComponents)
     })
@@ -1050,8 +1058,8 @@ describe("SDK: OrdersManager", () => {
         amount: "1000000000000000000",
       })
 
-      expect(mockAPI.postOffer).not.toHaveBeenCalled()
-      expect(mockAPI.postListing).not.toHaveBeenCalled()
+      expect(mockAPI.orders.postOffer).not.toHaveBeenCalled()
+      expect(mockAPI.orders.postListing).not.toHaveBeenCalled()
     })
 
     test("runs approvals but does not request a signature", async () => {
@@ -1101,10 +1109,10 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(2)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(2)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(2)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(2)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postListing).toHaveBeenCalledTimes(2)
+      expect(mockAPI.orders.postListing).toHaveBeenCalledTimes(2)
       expect(result.successful).toHaveLength(2)
       expect(result.failed).toHaveLength(0)
     })
@@ -1123,7 +1131,7 @@ describe("SDK: OrdersManager", () => {
       // Should use createListing, not createBulkOrders
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createBulkOrders).toBeUndefined()
-      expect(mockAPI.postListing).toHaveBeenCalledTimes(1)
+      expect(mockAPI.orders.postListing).toHaveBeenCalledTimes(1)
       expect(result.successful).toHaveLength(1)
       expect(result.failed).toHaveLength(0)
     })
@@ -1189,7 +1197,7 @@ describe("SDK: OrdersManager", () => {
       expect(result.successful).toHaveLength(3)
       expect(result.failed).toHaveLength(0)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postListing).toHaveBeenCalledTimes(3)
+      expect(mockAPI.orders.postListing).toHaveBeenCalledTimes(3)
     })
 
     test("creates bulk listings with different parameters", async () => {
@@ -1324,7 +1332,7 @@ describe("SDK: OrdersManager", () => {
       expect(result.successful).toHaveLength(25)
       expect(result.failed).toHaveLength(0)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postListing.mock.calls.length).toBe(25)
+      expect(mockAPI.orders.postListing.mock.calls.length).toBe(25)
     })
 
     test("handles network failures during bulk submission", async () => {
@@ -1354,7 +1362,7 @@ describe("SDK: OrdersManager", () => {
       })
 
       // Make the second API call fail
-      mockAPI.postListing
+      mockAPI.orders.postListing
         .mockResolvedValueOnce({
           orderHash: "0xOrderHash1",
           protocolData: mockOrder,
@@ -1389,14 +1397,14 @@ describe("SDK: OrdersManager", () => {
       } catch (error) {
         expect((error as Error).message).toContain("Network error")
         // Should have called postOrder twice before failing
-        expect(mockAPI.postListing.mock.calls.length).toBe(2)
+        expect(mockAPI.orders.postListing.mock.calls.length).toBe(2)
       }
     })
   })
 
   describe("createBulkOffers", () => {
     test("normalizes native Stable Chain offer currency to USDT0", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         pricingCurrencies: {
           offerCurrency: {
@@ -1469,10 +1477,10 @@ describe("SDK: OrdersManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.getNFT).toHaveBeenCalledTimes(2)
-      expect(mockAPI.getCollection).toHaveBeenCalledTimes(2)
+      expect(mockAPI.nfts.getNFT).toHaveBeenCalledTimes(2)
+      expect(mockAPI.collections.getCollection).toHaveBeenCalledTimes(2)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postOffer).toHaveBeenCalledTimes(2)
+      expect(mockAPI.orders.postOffer).toHaveBeenCalledTimes(2)
       expect(result.successful).toHaveLength(2)
       expect(result.failed).toHaveLength(0)
     })
@@ -1491,7 +1499,7 @@ describe("SDK: OrdersManager", () => {
       // Should use createOffer, not createBulkOrders
       expect(mockSeaport.createOrder).toHaveBeenCalledTimes(1)
       expect(mockSeaport.createBulkOrders).toBeUndefined()
-      expect(mockAPI.postOffer).toHaveBeenCalledTimes(1)
+      expect(mockAPI.orders.postOffer).toHaveBeenCalledTimes(1)
       expect(result.successful).toHaveLength(1)
       expect(result.failed).toHaveLength(0)
     })
@@ -1557,7 +1565,7 @@ describe("SDK: OrdersManager", () => {
       expect(result.successful).toHaveLength(3)
       expect(result.failed).toHaveLength(0)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postOffer).toHaveBeenCalledTimes(3)
+      expect(mockAPI.orders.postOffer).toHaveBeenCalledTimes(3)
     })
 
     test("creates bulk offers with different parameters", async () => {
@@ -1665,7 +1673,7 @@ describe("SDK: OrdersManager", () => {
     })
 
     test("uses collection's required zone when specified", async () => {
-      mockAPI.getCollection.mockResolvedValue({
+      mockAPI.collections.getCollection.mockResolvedValue({
         ...mockCollection,
         requiredZone: "0xRequiredZone",
       })
@@ -1732,7 +1740,7 @@ describe("SDK: OrdersManager", () => {
       expect(result.successful).toHaveLength(25)
       expect(result.failed).toHaveLength(0)
       expect(mockSeaport.createBulkOrders).toHaveBeenCalledTimes(1)
-      expect(mockAPI.postOffer.mock.calls.length).toBe(25)
+      expect(mockAPI.orders.postOffer.mock.calls.length).toBe(25)
     })
 
     test("handles network failures during bulk submission", async () => {
@@ -1762,7 +1770,7 @@ describe("SDK: OrdersManager", () => {
       })
 
       // Make the second API call fail
-      mockAPI.postOffer
+      mockAPI.orders.postOffer
         .mockResolvedValueOnce({
           orderHash: "0xOrderHash1",
           protocolData: mockOrder,
@@ -1797,7 +1805,7 @@ describe("SDK: OrdersManager", () => {
       } catch (error) {
         expect((error as Error).message).toContain("Network error")
         // Should have called postOrder twice before failing
-        expect(mockAPI.postOffer.mock.calls.length).toBe(2)
+        expect(mockAPI.orders.postOffer.mock.calls.length).toBe(2)
       }
     })
   })
@@ -2112,7 +2120,9 @@ describe("SDK: OrdersManager", () => {
       )
 
       setupBulkOrders(2)
-      mockAPI.postListing.mockRejectedValueOnce(new Error("rate limited"))
+      mockAPI.orders.postListing.mockRejectedValueOnce(
+        new Error("rate limited"),
+      )
       const listingResult = await manager.createBulkListings({
         listings: listingsOfLength(2),
         accountAddress: "0xSeller",
@@ -2122,7 +2132,7 @@ describe("SDK: OrdersManager", () => {
 
       logger.mockClear()
       setupBulkOrders(2)
-      mockAPI.postOffer.mockRejectedValueOnce(new Error("rate limited"))
+      mockAPI.orders.postOffer.mockRejectedValueOnce(new Error("rate limited"))
       const offerResult = await manager.createBulkOffers({
         offers: listingsOfLength(2),
         accountAddress: "0xBuyer",

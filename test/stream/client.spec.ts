@@ -41,15 +41,15 @@ describe("constructor", () => {
     expect(transport.isConnected()).toBe(false)
   })
 
-  test("accepts the deprecated `token` alias", () => {
-    streamClient = new OpenSeaStreamClient({
+  test("does not read the removed `token` option", () => {
+    // Cast stands in for an unmigrated JavaScript call site.
+    const legacyConfig = {
       token: "legacy",
       apiUrl: "ws://localhost:1234",
-      logLevel: LogLevel.WARN,
-    })
+    } as unknown as ClientConfig
 
-    expect(getTransport(streamClient).endpointUrl()).toBe(
-      "ws://localhost:1234/websocket?token=legacy&vsn=2.0.0",
+    expect(() => new OpenSeaStreamClient(legacyConfig)).toThrow(
+      /API key is required/,
     )
   })
 
@@ -75,7 +75,7 @@ describe("constructor", () => {
     }
 
     streamClient = new OpenSeaStreamClient({
-      token: "legacy",
+      apiKey: "legacy",
       apiUrl: "ws://localhost:1234",
       logLevel: LogLevel.WARN,
       // Cast stands in for the unmigrated JavaScript call site this protects.
@@ -87,52 +87,6 @@ describe("constructor", () => {
     expect(getTransport(streamClient).endpointUrl()).toBe(
       "ws://localhost:1234/websocket?token=legacy&vsn=2.0.0",
     )
-  })
-})
-
-describe("onItemReceivedOffer", () => {
-  test("is a no-op: no subscription, no connection, callable unsubscribe", async () => {
-    streamClient = new OpenSeaStreamClient({
-      ...clientOpts,
-      logLevel: LogLevel.ERROR,
-    })
-
-    const callback = vi.fn()
-    const unsubscribe = streamClient.onItemReceivedOffer("c1", callback)
-    await Promise.resolve()
-    await Promise.resolve()
-
-    // The Stream API never emits item_received_offer, so this must not join a
-    // topic or open a socket for a subscription that cannot deliver.
-    expect(getTopics(streamClient)).toEqual([])
-    expect(server.connectionCount).toBe(0)
-    expect(typeof unsubscribe).toBe("function")
-    expect(() => unsubscribe()).not.toThrow()
-    expect(callback).not.toHaveBeenCalled()
-  })
-
-  test("does not disturb a real subscription on the same collection", async () => {
-    streamClient = new OpenSeaStreamClient({
-      ...clientOpts,
-      logLevel: LogLevel.ERROR,
-    })
-
-    const onSold = vi.fn()
-    streamClient.onItemSold("c1", onSold)
-    streamClient.onItemReceivedOffer("c1", vi.fn())
-    await Promise.resolve()
-
-    expect(getTopics(streamClient)).toEqual(["collection:c1"])
-
-    const event = mockEvent(EventType.ITEM_SOLD, {})
-    server.send(
-      encode({
-        topic: collectionTopic("c1"),
-        event: EventType.ITEM_SOLD,
-        payload: event,
-      }),
-    )
-    expect(onSold).toHaveBeenCalledWith(event)
   })
 })
 

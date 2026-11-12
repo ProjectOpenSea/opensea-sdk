@@ -1,5 +1,19 @@
 # @opensea/sdk
 
+## 14.0.0
+
+### Major Changes
+
+- aac5e9c: Remove the deprecated API surface. Each removed item has a replacement that already shipped in 13.x:
+
+  - The 88 flat `OpenSeaAPI` methods are gone. Call the same method on its namespace with the same arguments, for example `api.getCollection(slug)` becomes `api.collections.getCollection(slug)`. Four were renamed: `api.buildDropMintTransaction` is `api.drops.buildMintTransaction`, `api.buildCrossChainDropMintTransactions` is `api.drops.buildCrossChainMintTransactions`, `api.getDeployContractReceipt` is `api.drops.getDeployReceipt`, and `api.validateNFTMetadata` is `api.nfts.validateMetadata`. The full method-to-namespace table is in the [API reference](https://github.com/ProjectOpenSea/opensea-sdk/blob/main/developerDocs/api-reference.md#calling-the-api). `api.search(args)` is unchanged.
+  - Stream: `onItemReceivedOffer`, `EventType.ITEM_RECEIVED_OFFER`, `ItemReceivedOfferEvent` and `ItemReceivedOfferEventPayload` are removed. The Stream API never emitted that event; use `onItemReceivedBid`, `EventType.ITEM_RECEIVED_BID`, `ItemReceivedBidEvent` and `ItemReceivedBidEventPayload`.
+  - Stream: the `token` option on `ClientConfig` is removed. Pass `apiKey`. A config with only `token` now throws "An OpenSea API key is required".
+  - Auth: `OpenSeaAuthConfig.authBaseUrl` and `LinkWalletWithSiwxOptions.authBaseUrl` are removed; use `apiBaseUrl`. `LinkWalletWithSiwxOptions.statement`, which was already ignored, is removed: the API issues the statement with the wallet-link nonce. The `AuthTokenResponse` type is removed; `OpenSeaAuth` returns `AuthToken`, built from the scoped-token and exchange responses.
+  - `OpenSeaRateLimitError` is removed. It was an alias of `OpenSeaApiError`, which carries `statusCode` (429 or 599 on a rate limit), `retryAfter` and `responseBody`.
+  - `GetTokensArgs.next` is removed, along with its translation to `cursor`. Pass the previous response's `next` as `cursor` to `api.tokens.getTrendingTokens` and `api.tokens.getTopTokens`.
+  - `GetTopPfpCollectionsArgs.chain` is removed, and `api.collections.getTopPfpCollections` no longer sends a `chain` query parameter, which the API deprecated. Pass `chains: [chain]`.
+
 ## 13.0.6
 
 ### Patch Changes

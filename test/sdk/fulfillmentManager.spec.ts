@@ -44,61 +44,63 @@ describe("SDK: FulfillmentManager", () => {
 
     // Mock OpenSeaAPI with full transaction data
     mockAPI = {
-      generateFulfillmentData: vi.fn().mockResolvedValue({
-        fulfillmentData: {
-          transaction: {
-            to: "0xSeaportAddress",
-            value: 0,
-            function:
-              "fulfillAdvancedOrder(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),(uint256,uint8,uint256,uint256,bytes32[])[],bytes32,address)",
-            inputData: {
-              advancedOrder: {
-                parameters: {
-                  offerer: "0xfba662e1a8e91a350702cf3b87d0c2d2fb4ba57f",
-                  zone: "0x0000000000000000000000000000000000000000",
-                  offer: [
-                    {
-                      itemType: 3,
-                      token: "0x88d381e3c65221abea498c69e990d1deb7bd3863",
-                      identifierOrCriteria: "1",
-                      startAmount: "10000",
-                      endAmount: "10000",
-                    },
-                  ],
-                  consideration: [
-                    {
-                      itemType: 0,
-                      token: "0x0000000000000000000000000000000000000000",
-                      identifierOrCriteria: "0",
-                      startAmount: "99000000",
-                      endAmount: "99000000",
-                      recipient: "0xfba662e1a8e91a350702cf3b87d0c2d2fb4ba57f",
-                    },
-                  ],
-                  orderType: 1,
-                  startTime: "1759963495",
-                  endTime: "1775515495",
-                  zoneHash:
-                    "0x0000000000000000000000000000000000000000000000000000000000000000",
-                  salt: "27855337018906766782546881864045825683096516384821792734247163280454785126732",
-                  conduitKey:
-                    "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
-                  totalOriginalConsiderationItems: "2",
+      orders: {
+        generateFulfillmentData: vi.fn().mockResolvedValue({
+          fulfillmentData: {
+            transaction: {
+              to: "0xSeaportAddress",
+              value: 0,
+              function:
+                "fulfillAdvancedOrder(((address,address,(uint8,address,uint256,uint256,uint256)[],(uint8,address,uint256,uint256,uint256,address)[],uint8,uint256,uint256,bytes32,uint256,bytes32,uint256),uint120,uint120,bytes,bytes),(uint256,uint8,uint256,uint256,bytes32[])[],bytes32,address)",
+              inputData: {
+                advancedOrder: {
+                  parameters: {
+                    offerer: "0xfba662e1a8e91a350702cf3b87d0c2d2fb4ba57f",
+                    zone: "0x0000000000000000000000000000000000000000",
+                    offer: [
+                      {
+                        itemType: 3,
+                        token: "0x88d381e3c65221abea498c69e990d1deb7bd3863",
+                        identifierOrCriteria: "1",
+                        startAmount: "10000",
+                        endAmount: "10000",
+                      },
+                    ],
+                    consideration: [
+                      {
+                        itemType: 0,
+                        token: "0x0000000000000000000000000000000000000000",
+                        identifierOrCriteria: "0",
+                        startAmount: "99000000",
+                        endAmount: "99000000",
+                        recipient: "0xfba662e1a8e91a350702cf3b87d0c2d2fb4ba57f",
+                      },
+                    ],
+                    orderType: 1,
+                    startTime: "1759963495",
+                    endTime: "1775515495",
+                    zoneHash:
+                      "0x0000000000000000000000000000000000000000000000000000000000000000",
+                    salt: "27855337018906766782546881864045825683096516384821792734247163280454785126732",
+                    conduitKey:
+                      "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+                    totalOriginalConsiderationItems: "2",
+                  },
+                  numerator: 1,
+                  denominator: 1,
+                  signature: "0x",
+                  extraData: "0x",
                 },
-                numerator: 1,
-                denominator: 1,
-                signature: "0x",
-                extraData: "0x",
+                criteriaResolvers: [],
+                fulfillerConduitKey:
+                  "0x0000000000000000000000000000000000000000000000000000000000000000",
+                recipient: "0x0000000000000000000000000000000000000000",
               },
-              criteriaResolvers: [],
-              fulfillerConduitKey:
-                "0x0000000000000000000000000000000000000000000000000000000000000000",
-              recipient: "0x0000000000000000000000000000000000000000",
             },
+            orders: [{ signature: "0xNewSignature" }],
           },
-          orders: [{ signature: "0xNewSignature" }],
-        },
-      }),
+        }),
+      },
     }
 
     // Mock Seaport
@@ -152,7 +154,7 @@ describe("SDK: FulfillmentManager", () => {
       })
 
       expect(mockRequireAccountIsAvailable).toHaveBeenCalledTimes(1)
-      expect(mockAPI.generateFulfillmentData).toHaveBeenCalledTimes(1)
+      expect(mockAPI.orders.generateFulfillmentData).toHaveBeenCalledTimes(1)
       expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
       expect(mockConfirmTransaction).toHaveBeenCalledTimes(1)
       expect(result).toBe("0xFulfillTxHash")
@@ -176,14 +178,14 @@ describe("SDK: FulfillmentManager", () => {
         tokenId: "123",
       })
 
-      expect(mockAPI.generateFulfillmentData).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      expect(mockAPI.orders.generateFulfillmentData).toHaveBeenCalledTimes(1)
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[4]).toBe("0xNFT")
       expect(apiCall[5]).toBe("123")
     })
 
     test("includes extraData when order has offer protection", async () => {
-      mockAPI.generateFulfillmentData.mockResolvedValue({
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
           transaction: {
             to: "0xSeaportAddress",
@@ -255,8 +257,8 @@ describe("SDK: FulfillmentManager", () => {
         recipientAddress,
       })
 
-      expect(mockAPI.generateFulfillmentData).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      expect(mockAPI.orders.generateFulfillmentData).toHaveBeenCalledTimes(1)
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[7]).toBe(recipientAddress)
     })
 
@@ -264,7 +266,7 @@ describe("SDK: FulfillmentManager", () => {
       // Production returns calldata_suffix on every fulfillment response. The
       // SDK re-encodes the call from inputData, so it has to re-attach the
       // suffix or the fill goes onchain unattributed.
-      mockAPI.generateFulfillmentData.mockResolvedValue({
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
           transaction: {
             to: "0xSeaportAddress",
@@ -306,7 +308,7 @@ describe("SDK: FulfillmentManager", () => {
     })
 
     test("encodes fulfillBasicOrder alias using supported fragment", async () => {
-      mockAPI.generateFulfillmentData.mockResolvedValue({
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
           transaction: {
             to: "0xSeaportAddress",
@@ -347,7 +349,7 @@ describe("SDK: FulfillmentManager", () => {
     })
 
     test("encodes fulfillOrder with exactly 2 params (no recipient)", async () => {
-      mockAPI.generateFulfillmentData.mockResolvedValue({
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
           transaction: {
             to: "0xSeaportAddress",
@@ -474,7 +476,7 @@ describe("SDK: FulfillmentManager", () => {
     }: {
       fulfillerConduitKey?: string
     } = {}) {
-      mockAPI.generateFulfillmentData.mockResolvedValue({
+      mockAPI.orders.generateFulfillmentData.mockResolvedValue({
         fulfillmentData: {
           transaction: {
             to: "0xSeaportAddress",
@@ -685,7 +687,7 @@ describe("SDK: FulfillmentManager", () => {
 
       // SDK defaults unitsToFill to "1" for both listings and offers
       expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[6]).toBe("1") // unitsToFill defaults to "1"
     })
 
@@ -697,7 +699,7 @@ describe("SDK: FulfillmentManager", () => {
 
       // SDK defaults unitsToFill to "1" for both listings and offers
       expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[6]).toBe("1") // unitsToFill defaults to "1"
     })
 
@@ -709,7 +711,7 @@ describe("SDK: FulfillmentManager", () => {
 
       // SDK defaults unitsToFill to "1" for both listings and offers
       expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[6]).toBe("1") // unitsToFill defaults to "1"
     })
 
@@ -739,7 +741,7 @@ describe("SDK: FulfillmentManager", () => {
       })
 
       expect(mockSigner.sendTransaction).toHaveBeenCalledTimes(1)
-      const apiCall = mockAPI.generateFulfillmentData.mock.calls[0]
+      const apiCall = mockAPI.orders.generateFulfillmentData.mock.calls[0]
       expect(apiCall[6]).toBe("5") // unitsToFill passed to API
     })
   })

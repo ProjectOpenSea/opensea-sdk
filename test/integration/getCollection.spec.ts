@@ -16,9 +16,9 @@ const allChainCollectionsTest =
 describe("SDK: getCollection", () => {
   test("Get Verified Collection", async () => {
     const slug = "cool-cats-nft"
-    const collection = await getSdkForChain(Chain.Mainnet).api.getCollection(
-      slug,
-    )
+    const collection = await getSdkForChain(
+      Chain.Mainnet,
+    ).api.collections.getCollection(slug)
 
     expect(collection).toBeTruthy()
     expect(collection.name).toBeTruthy()
@@ -27,15 +27,17 @@ describe("SDK: getCollection", () => {
   })
 
   test("Get Collections", async () => {
-    const response = await getSdkForChain(Chain.Mainnet).api.getCollections()
+    const response = await getSdkForChain(
+      Chain.Mainnet,
+    ).api.collections.getCollections()
     const { collections, next } = response
     expect(collections[0], "Collection should not be null").toBeTruthy()
     expect(collections[0].name, "Collection name should exist").toBeTruthy()
     expect(next, "Next cursor should be included").toBeTruthy()
 
-    const response2 = await getSdkForChain(Chain.Mainnet).api.getCollections(
-      CollectionOrderByOption.MARKET_CAP,
-    )
+    const response2 = await getSdkForChain(
+      Chain.Mainnet,
+    ).api.collections.getCollections(CollectionOrderByOption.MARKET_CAP)
     const { collections: collectionsByMarketCap, next: nextByMarketCap } =
       response2
     expect(
@@ -55,7 +57,9 @@ describe("SDK: getCollection", () => {
   })
 
   test("Get Collections by creator", async () => {
-    const response = await getSdkForChain(Chain.Mainnet).api.getCollections(
+    const response = await getSdkForChain(
+      Chain.Mainnet,
+    ).api.collections.getCollections(
       CollectionOrderByOption.CREATED_DATE,
       undefined,
       "cryptoexpert123",
@@ -68,9 +72,9 @@ describe("SDK: getCollection", () => {
 
   test("Get Collection Stats", async () => {
     const slug = "cool-cats-nft"
-    const stats = await getSdkForChain(Chain.Mainnet).api.getCollectionStats(
-      slug,
-    )
+    const stats = await getSdkForChain(
+      Chain.Mainnet,
+    ).api.collections.getCollectionStats(slug)
 
     expect(stats, "Stats should not be null").toBeTruthy()
     expect(stats.total.volume, "Volume should not be null").toBeTruthy()
@@ -85,7 +89,7 @@ describe("SDK: getCollection", () => {
 
     await processInBatches(chains, 3, async chain => {
       try {
-        const response = await sdk.api.getCollections(
+        const response = await sdk.api.collections.getCollections(
           CollectionOrderByOption.CREATED_DATE,
           chain,
           undefined,

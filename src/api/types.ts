@@ -848,19 +848,10 @@ export interface GetTokensArgs {
   /** Limit the number of results */
   limit?: number
   /**
-   * Cursor for pagination, taken from the `next` field of the previous response.
-   *
-   * The request parameter is `cursor` while the response field is `next`, which is why
-   * {@link GetTokensArgs.next} looked correct and silently paginated nowhere.
+   * Cursor for pagination, taken from the `next` field of the previous response. The request
+   * parameter is `cursor` even though the response field is `next`.
    */
   cursor?: string
-  /**
-   * @deprecated Use {@link GetTokensArgs.cursor}. These endpoints never read a `next` query
-   * parameter, so passing this alone returned the first page every time. It is now forwarded as
-   * `cursor` so existing callers start paginating instead of looping, and `cursor` wins if both
-   * are set.
-   */
-  next?: string
   /** Filter to these chains */
   chains?: ChainIdentifier[]
   /**
@@ -1360,11 +1351,12 @@ export type CollectionPfpProfilesResponse =
 
 /**
  * Query args for `GET /api/v2/pfp/top-collections`, derived from the spec. `limit` (1-50) is
- * required.
+ * required. The spec's deprecated single `chain` parameter is left out: use `chains`.
  * @category API Query Args
  */
-export type GetTopPfpCollectionsArgs = Camelize<
-  OperationQueryParams<"get_top_pfp_collections">
+export type GetTopPfpCollectionsArgs = Omit<
+  Camelize<OperationQueryParams<"get_top_pfp_collections">>,
+  "chain"
 >
 
 /**

@@ -312,13 +312,15 @@ export class OrdersManager {
   }) {
     await this.context.requireAccountIsAvailable(accountAddress)
 
-    const { nft } = await this.context.api.getNFT(
+    const { nft } = await this.context.api.nfts.getNFT(
       asset.tokenAddress,
       asset.tokenId,
     )
     const offerAssetItems = this.getNFTItems([nft], [BigInt(quantity ?? 1)])
 
-    const collection = await this.context.api.getCollection(nft.collection)
+    const collection = await this.context.api.collections.getCollection(
+      nft.collection,
+    )
 
     const paymentTokenAddress =
       collection.pricingCurrencies?.listingCurrency?.address ??
@@ -446,7 +448,7 @@ export class OrdersManager {
   }) {
     await this.context.requireAccountIsAvailable(accountAddress)
 
-    const { nft } = await this.context.api.getNFT(
+    const { nft } = await this.context.api.nfts.getNFT(
       asset.tokenAddress,
       asset.tokenId,
     )
@@ -455,7 +457,9 @@ export class OrdersManager {
       [BigInt(quantity ?? 1)],
     )
 
-    const collection = await this.context.api.getCollection(nft.collection)
+    const collection = await this.context.api.collections.getCollection(
+      nft.collection,
+    )
 
     const paymentTokenAddress = this.resolveOfferPaymentToken(collection)
 
@@ -589,7 +593,7 @@ export class OrdersManager {
     })
     const order = await useCase.executeAllActions()
 
-    return this.context.api.postOffer(
+    return this.context.api.orders.postOffer(
       order,
       this.context.seaport.contract.target as string,
     )
@@ -655,7 +659,7 @@ export class OrdersManager {
     })
     const order = await useCase.executeAllActions()
 
-    return this.context.api.postListing(
+    return this.context.api.orders.postListing(
       order,
       this.context.seaport.contract.target as string,
     )
@@ -745,11 +749,13 @@ export class OrdersManager {
       } = listing
 
       // Fetch NFT and collection data
-      const { nft } = await this.context.api.getNFT(
+      const { nft } = await this.context.api.nfts.getNFT(
         asset.tokenAddress,
         asset.tokenId,
       )
-      const collection = await this.context.api.getCollection(nft.collection)
+      const collection = await this.context.api.collections.getCollection(
+        nft.collection,
+      )
 
       const paymentTokenAddress =
         collection.pricingCurrencies?.listingCurrency?.address ??
@@ -842,7 +848,7 @@ export class OrdersManager {
       orders,
       noun: "listing",
       post: order =>
-        this.context.api.postListing(
+        this.context.api.orders.postListing(
           order,
           this.context.seaport.contract.target as string,
         ),
@@ -928,11 +934,13 @@ export class OrdersManager {
       } = offer
 
       // Fetch NFT and collection data
-      const { nft } = await this.context.api.getNFT(
+      const { nft } = await this.context.api.nfts.getNFT(
         asset.tokenAddress,
         asset.tokenId,
       )
-      const collection = await this.context.api.getCollection(nft.collection)
+      const collection = await this.context.api.collections.getCollection(
+        nft.collection,
+      )
 
       const paymentTokenAddress = this.resolveOfferPaymentToken(collection)
 
@@ -1007,7 +1015,7 @@ export class OrdersManager {
       orders,
       noun: "offer",
       post: order =>
-        this.context.api.postOffer(
+        this.context.api.orders.postOffer(
           order,
           this.context.seaport.contract.target as string,
         ),
@@ -1062,11 +1070,12 @@ export class OrdersManager {
   }): Promise<CollectionOffer | null> {
     await this.context.requireAccountIsAvailable(accountAddress)
 
-    const collection = await this.context.api.getCollection(collectionSlug)
+    const collection =
+      await this.context.api.collections.getCollection(collectionSlug)
 
     const paymentTokenAddress = this.resolveOfferPaymentToken(collection)
 
-    const buildOfferResult = await this.context.api.buildOffer(
+    const buildOfferResult = await this.context.api.offers.buildOffer(
       accountAddress,
       quantity,
       collectionSlug,
@@ -1124,7 +1133,7 @@ export class OrdersManager {
     )
     const order = await executeAllActions()
 
-    return this.context.api.postCollectionOffer(
+    return this.context.api.offers.postCollectionOffer(
       order,
       collectionSlug,
       traitType,

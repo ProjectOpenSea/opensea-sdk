@@ -102,9 +102,9 @@ Creating listings and offers requires an adapter that supports typed-data signin
 `walletAuth`. For example, `sdk.api.collections.getCollection(slug)` or
 `sdk.api.offers.getAllOffers(...)`. Search is the one flat method: `sdk.api.search(args)`.
 
-The older flat methods (`sdk.api.getCollection(slug)`) still work but are `@deprecated`, name
-their replacements, and will be removed in the next major version. Four of them change name; see
-the [API reference](developerDocs/api-reference.md#calling-the-api).
+Version 14 removed the older flat methods such as `sdk.api.getCollection(slug)`. Each one maps to
+the namespaced method of the same name, except four that were renamed; see the
+[API reference](developerDocs/api-reference.md#calling-the-api).
 
 ## Response casing
 

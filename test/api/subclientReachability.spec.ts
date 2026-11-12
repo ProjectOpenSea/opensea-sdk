@@ -16,11 +16,12 @@ import type { ToolsAPI } from "../../src/api/tools"
 import type { TransactionsAPI } from "../../src/api/transactions"
 import type { WalletAuthAPI } from "../../src/api/walletAuth"
 import {
-  DEPRECATED_FLAT_SURFACE,
   isMethodOn,
+  methodNames,
   NAMESPACED,
   NOT_NAMESPACED,
   subClientFields,
+  subClientPrototypes,
 } from "../utils/forwarderContract"
 
 /**
@@ -33,8 +34,8 @@ import {
  * than the instance: there is no second edit left to forget.
  *
  * So these tests guard the two things construction does not: that a sub-client is actually exposed
- * rather than left private, and that the deprecated flat surface has not lost a method before the
- * major that removes it.
+ * rather than left private, and that no flat forwarder for a sub-client method creeps back onto
+ * `OpenSeaAPI`.
  */
 
 /**
@@ -142,14 +143,22 @@ describe("sub-client reachability", () => {
     expect(isMethodOn(OpenSeaAPI.prototype, "search")).toBe(true)
   })
 
-  test("the deprecated flat surface has not lost a method", () => {
-    // These stay callable until the major that removes them. Dropping one early breaks anyone
-    // still on the flat style, and nothing else here would notice: the namespaces would still
-    // work and every other test would still pass.
-    const missing = DEPRECATED_FLAT_SURFACE.filter(
-      name => !isMethodOn(OpenSeaAPI.prototype, name),
-    )
+  test("OpenSeaAPI carries no flat forwarder for a namespaced method", () => {
+    // A namespaced method is reached as `api.<namespace>.<method>()`. A flat copy on OpenSeaAPI
+    // would be a second public surface to keep in sync with the sub-client.
+    const flat = new Set(methodNames(OpenSeaAPI.prototype))
+    const forwarded = [...subClientPrototypes()]
+      .filter(([client]) => client in NAMESPACED)
+      .flatMap(([client, prototype]) =>
+        methodNames(prototype)
+          .filter(name => flat.has(name))
+          .map(name => `${client}.${name}`),
+      )
 
-    expect(missing).toEqual([])
+    expect(forwarded).toEqual([])
+    // Guards the enumeration: an empty method list would make the check above vacuous.
+    expect(
+      methodNames(subClientPrototypes().get("CollectionsAPI") as object),
+    ).toContain("getCollection")
   })
 })

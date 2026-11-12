@@ -355,13 +355,6 @@ export interface OpenSeaApiError extends Error {
 }
 
 /**
- * @deprecated Use {@link OpenSeaApiError}. Retained as an alias: the shape is identical and
- * `retryAfter` was always optional, so existing rate-limit handling is unaffected.
- * @category API Models
- */
-export type OpenSeaRateLimitError = OpenSeaApiError
-
-/**
  * Options for controlling HTTP request behavior.
  * @category API Models
  */

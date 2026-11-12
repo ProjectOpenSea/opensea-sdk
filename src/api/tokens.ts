@@ -47,28 +47,6 @@ import type {
 } from "./types"
 
 /**
- * Forwards a deprecated `next` as `cursor`.
- *
- * These endpoints name the request parameter `cursor` and the response field `next`, so callers
- * who paged by feeding `next` straight back got the first page every time, with no error to notice.
- * `cursor` wins when both are set.
- */
-function withCursor(args?: GetTokensArgs): GetTokensArgs | undefined {
-  // Presence, not truthiness: `next: ""` is still the deprecated key, and a falsy check would
-  // leave it on the wire as an undocumented parameter, which is the failure this exists to fix.
-  if (args === undefined || !("next" in args)) {
-    return args
-  }
-  const { next, ...rest } = args
-  // An empty or absent `next` carries no cursor, so it is dropped rather than forwarded as an
-  // empty `cursor`, which would put a meaningless parameter on the wire in its place.
-  if (rest.cursor !== undefined || !next) {
-    return rest
-  }
-  return { ...rest, cursor: next }
-}
-
-/**
  * Token-related API operations
  */
 export class TokensAPI {
@@ -82,7 +60,7 @@ export class TokensAPI {
   ): Promise<GetTrendingTokensResponse> {
     const response = await this.fetcher.get<GetTrendingTokensResponse>(
       getTrendingTokensPath(),
-      withCursor(args),
+      args,
     )
     return response
   }
@@ -93,7 +71,7 @@ export class TokensAPI {
   async getTopTokens(args?: GetTokensArgs): Promise<GetTopTokensResponse> {
     const response = await this.fetcher.get<GetTopTokensResponse>(
       getTopTokensPath(),
-      withCursor(args),
+      args,
     )
     return response
   }

@@ -28,10 +28,6 @@ import { readOpenApiSpec } from "../utils/openapiSpec"
 
 /** Documented parameters an args interface deliberately does not expose, with the reason. */
 const INTENTIONALLY_OMITTED: Record<string, Record<string, string>> = {
-  GetTokensArgs: {
-    // Forwarded from the deprecated `next` by `withCursor`, and exposed as `cursor`.
-    cursor: "exposed as `cursor`",
-  },
   GetNFTsByAccountOptions: {
     limit: "positional argument 2 of getNFTsByAccount",
     next: "positional argument 3 of getNFTsByAccount",
@@ -61,7 +57,6 @@ type CoversExactly<Args, Fields extends readonly (keyof Args)[]> = [
 const GET_TOKENS_FIELDS = [
   "limit",
   "cursor",
-  "next",
   "chains",
   "sortBy",
   "sortDirection",
@@ -230,12 +225,10 @@ describe("query arg drift", () => {
         const documented = new Set(documentedQueryParams(path, method))
         // Fields the SDK never puts on the wire for this endpoint, so the server cannot
         // silently ignore them:
-        //   GetTokensArgs.next: rewritten to `cursor` by `withCursor`.
         //   GetEventsArgs.chain: stripped by `withoutIgnoredChain`. The field is still valid
         //   for `getEventsByAccount`, whose endpoint does document `chain`; this entry is
         //   about the general feed only.
         const NOT_SENT: Record<string, string[]> = {
-          GetTokensArgs: ["next"],
           GetEventsArgs: ["chain"],
         }
         const rewritten = new Set(NOT_SENT[name] ?? [])
@@ -274,7 +267,7 @@ describe("query arg serialization", () => {
 
   it("repeats eventType as snake_case event_type, one param per value", async () => {
     const url = await urlFor(api =>
-      api.getEvents({ eventType: ["sale", "transfer"] }),
+      api.events.getEvents({ eventType: ["sale", "transfer"] }),
     )
 
     expect(url.searchParams.getAll("event_type")).toEqual(["sale", "transfer"])
@@ -283,7 +276,7 @@ describe("query arg serialization", () => {
 
   it("repeats chains on the token endpoints", async () => {
     const url = await urlFor(api =>
-      api.getTrendingTokens({ chains: ["ethereum", "solana"] }),
+      api.tokens.getTrendingTokens({ chains: ["ethereum", "solana"] }),
     )
 
     expect(url.searchParams.getAll("chains")).toEqual(["ethereum", "solana"])
@@ -293,14 +286,17 @@ describe("query arg serialization", () => {
     {
       endpoint: "getTopTokens",
       call: (api: OpenSeaAPI) =>
-        api.getTopTokens({ sortBy: "market_cap", sortDirection: "asc" }),
+        api.tokens.getTopTokens({ sortBy: "market_cap", sortDirection: "asc" }),
       sortBy: "market_cap",
       sortDirection: "asc",
     },
     {
       endpoint: "getTrendingTokens",
       call: (api: OpenSeaAPI) =>
-        api.getTrendingTokens({ sortBy: "price", sortDirection: "desc" }),
+        api.tokens.getTrendingTokens({
+          sortBy: "price",
+          sortDirection: "desc",
+        }),
       sortBy: "price",
       sortDirection: "desc",
     },
@@ -323,14 +319,16 @@ describe("query arg serialization", () => {
   it("omits the ranking sort when the caller does not set one", async () => {
     // Each endpoint keeps its own server-side default, so sending nothing is
     // what preserves the behavior callers had before sorting was exposed.
-    const url = await urlFor(api => api.getTopTokens({ limit: 5 }))
+    const url = await urlFor(api => api.tokens.getTopTokens({ limit: 5 }))
 
     expect(url.searchParams.has("sort_by")).toBe(false)
     expect(url.searchParams.has("sort_direction")).toBe(false)
   })
 
-  it("sends the forwarded cursor, never the deprecated next", async () => {
-    const url = await urlFor(api => api.getTrendingTokens({ next: "page-2" }))
+  it("sends the token page cursor as cursor, never next", async () => {
+    const url = await urlFor(api =>
+      api.tokens.getTrendingTokens({ cursor: "page-2" }),
+    )
 
     expect(url.searchParams.get("cursor")).toBe("page-2")
     expect(url.searchParams.has("next")).toBe(false)
@@ -423,19 +421,39 @@ describe("query arg serialization", () => {
     expect(url.searchParams.get("limit")).toBe("20")
   })
 
-  it("sends limit and chain to the top pfp collections endpoint", async () => {
+  it("sends limit and chains to the top pfp collections endpoint", async () => {
     const url = await urlFor(api =>
-      api.collections.getTopPfpCollections({ limit: 25, chain: Chain.Base }),
+      api.collections.getTopPfpCollections({
+        limit: 25,
+        chains: [Chain.Base, Chain.Mainnet],
+      }),
     )
 
     expect(url.pathname).toBe("/api/v2/pfp/top-collections")
     expect(url.searchParams.get("limit")).toBe("25")
-    expect(url.searchParams.get("chain")).toBe("base")
+    expect(url.searchParams.getAll("chains")).toEqual(["base", "ethereum"])
+    expect(url.searchParams.has("chain")).toBe(false)
+  })
+
+  it("never sends the deprecated chain to the top pfp collections endpoint", async () => {
+    // Cast stands in for an unmigrated JavaScript call site.
+    const legacyArgs = {
+      limit: 25,
+      chain: Chain.Base,
+    } as unknown as Parameters<
+      OpenSeaAPI["collections"]["getTopPfpCollections"]
+    >[0]
+    const url = await urlFor(api =>
+      api.collections.getTopPfpCollections(legacyArgs),
+    )
+
+    expect(url.searchParams.has("chain")).toBe(false)
+    expect(url.searchParams.get("limit")).toBe("25")
   })
 
   it("omits the chain the events feed ignores", async () => {
     const url = await urlFor(api =>
-      api.getEvents({ chain: "solana", limit: 5 }),
+      api.events.getEvents({ chain: "solana", limit: 5 }),
     )
 
     expect(url.searchParams.has("chain")).toBe(false)

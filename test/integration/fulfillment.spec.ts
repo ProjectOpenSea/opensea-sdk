@@ -5,14 +5,17 @@ import { api } from "../utils/liveSdk"
 
 describe("Generating fulfillment data", () => {
   test(`Generate fulfillment data for listing`, async () => {
-    const { listings } = await api.getAllListings("boredapeyachtclub", 1)
+    const { listings } = await api.listings.getAllListings(
+      "boredapeyachtclub",
+      1,
+    )
     const listing = listings?.[0]
 
     if (!listing?.orderHash) {
       return
     }
 
-    const fulfillment = await api.generateFulfillmentData(
+    const fulfillment = await api.orders.generateFulfillmentData(
       ethers.Wallet.createRandom().address,
       listing.orderHash,
       listing.protocolAddress!,
@@ -23,14 +26,14 @@ describe("Generating fulfillment data", () => {
   })
 
   test(`Generate fulfillment data for offer`, async () => {
-    const { offers } = await api.getAllOffers("boredapeyachtclub", 10)
+    const { offers } = await api.offers.getAllOffers("boredapeyachtclub", 10)
     const offer = offers?.find(o => !o.criteria)
 
     if (!offer?.orderHash) {
       return
     }
 
-    const fulfillment = await api.generateFulfillmentData(
+    const fulfillment = await api.orders.generateFulfillmentData(
       ethers.Wallet.createRandom().address,
       offer.orderHash,
       offer.protocolAddress!,
@@ -42,7 +45,7 @@ describe("Generating fulfillment data", () => {
 
   test(`Generate fulfillment data for collection offer with consideration parameters`, async () => {
     // Get a collection offer (criteria offer)
-    const offers = await api.getAllOffers("boredapeyachtclub", 1)
+    const offers = await api.offers.getAllOffers("boredapeyachtclub", 1)
 
     if (!offers.offers || offers.offers.length === 0) {
       // Skip if no offers available
@@ -59,7 +62,7 @@ describe("Generating fulfillment data", () => {
 
     try {
       // Test with consideration parameters for criteria offers
-      const fulfillment = await api.generateFulfillmentData(
+      const fulfillment = await api.orders.generateFulfillmentData(
         ethers.Wallet.createRandom().address,
         collectionOffer.orderHash,
         collectionOffer.protocolAddress!,

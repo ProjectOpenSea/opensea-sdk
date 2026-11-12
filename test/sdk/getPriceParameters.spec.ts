@@ -46,7 +46,7 @@ type AnySDK = EthersSDK | ViemSDK
  * chain's default offer currency.
  */
 const stubOfferDependencies = (chainSDK: AnySDK) => {
-  vi.spyOn(chainSDK.api, "getNFT").mockResolvedValue({
+  vi.spyOn(chainSDK.api.nfts, "getNFT").mockResolvedValue({
     nft: {
       identifier: "1234",
       collection: "test-collection",
@@ -54,15 +54,15 @@ const stubOfferDependencies = (chainSDK: AnySDK) => {
       tokenStandard: "erc721",
     },
   } as never)
-  vi.spyOn(chainSDK.api, "getCollection").mockResolvedValue({
+  vi.spyOn(chainSDK.api.collections, "getCollection").mockResolvedValue({
     collection: "test-collection",
     fees: [],
   } as never)
-  vi.spyOn(chainSDK.api, "postOffer").mockResolvedValue({} as never)
+  vi.spyOn(chainSDK.api.orders, "postOffer").mockResolvedValue({} as never)
   const createOrder = vi
     .spyOn(chainSDK.seaport, "createOrder")
     .mockResolvedValue({ executeAllActions: async () => ({}) } as never)
-  const getPaymentToken = vi.spyOn(chainSDK.api, "getPaymentToken")
+  const getPaymentToken = vi.spyOn(chainSDK.api.accounts, "getPaymentToken")
   return { createOrder, getPaymentToken }
 }
 
@@ -88,7 +88,7 @@ describe("SDK: _getPriceParameters", () => {
   })
 
   test("uses payment token decimals and rejects excess precision", async () => {
-    vi.spyOn(sdk.api, "getPaymentToken").mockResolvedValue({
+    vi.spyOn(sdk.api.accounts, "getPaymentToken").mockResolvedValue({
       decimals: 6,
     } as never)
     const mirrorAddress = "0x779ded0c9e1022225f8e0630b35a9b54be713736"

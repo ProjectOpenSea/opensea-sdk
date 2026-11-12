@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest"
-import { Chain, type OpenSeaRateLimitError } from "../../src"
+import { Chain, type OpenSeaApiError } from "../../src"
 import { OpenSeaAPI } from "../../src/api/api"
 import { getOfferPaymentToken } from "../../src/utils"
 import { BAYC_CONTRACT_ADDRESS } from "../utils/constants"
@@ -81,7 +81,7 @@ describe("API", () => {
     )
     const localApi = new OpenSeaAPI({ apiKey: "key" })
 
-    const traits = await localApi.getTraits("doodles-official")
+    const traits = await localApi.collections.getTraits("doodles-official")
 
     expect(traits.categories).toEqual({ fur_color: "string" })
     expect(traits.counts.fur_color).toEqual({ dark_brown: 12, darkBrown: 3 })
@@ -111,7 +111,8 @@ describe("API", () => {
     )
     const localApi = new OpenSeaAPI({ apiKey: "key" })
 
-    const result = await localApi.getCollectionTraitFloors("boredapeyachtclub")
+    const result =
+      await localApi.collections.getCollectionTraitFloors("boredapeyachtclub")
 
     expect(fetchStub.mock.calls[0][0]).toBe(
       "https://api.opensea.io/api/v2/traits/boredapeyachtclub/floors",
@@ -129,32 +130,6 @@ describe("API", () => {
     })
   })
 
-  test("the namespace and the deprecated flat method reach the same endpoint", async () => {
-    // The namespace is the supported call now, so it needs a test that actually makes the request
-    // rather than only a structural assertion that the property exists. Driving both and comparing
-    // is what shows the deprecated method is a true alias and not a second implementation.
-    vi.useRealTimers()
-    const body = { chain: "ethereum", floors: [] }
-    // A fresh Response per call: a body can only be read once, and both calls read one.
-    fetchStub = vi
-      .spyOn(globalThis, "fetch")
-      .mockImplementation(
-        async () => new Response(JSON.stringify(body), { status: 200 }),
-      )
-    const localApi = new OpenSeaAPI({ apiKey: "key" })
-
-    const viaNamespace =
-      await localApi.collections.getCollectionTraitFloors("boredapeyachtclub")
-    const viaFlat = await localApi.getCollectionTraitFloors("boredapeyachtclub")
-
-    expect(fetchStub.mock.calls[0][0]).toBe(
-      "https://api.opensea.io/api/v2/traits/boredapeyachtclub/floors",
-    )
-    expect(fetchStub.mock.calls[1][0]).toBe(fetchStub.mock.calls[0][0])
-    expect(viaNamespace).toEqual(viaFlat)
-    expect(viaNamespace).toEqual(body)
-  })
-
   test("getCollectionTraitFloors encodes the slug into the path", async () => {
     // A slug is caller-supplied, so an unencoded `/` would re-target the request at another path.
     vi.useRealTimers()
@@ -165,7 +140,7 @@ describe("API", () => {
     )
     const localApi = new OpenSeaAPI({ apiKey: "key" })
 
-    await localApi.getCollectionTraitFloors("a/b")
+    await localApi.collections.getCollectionTraitFloors("a/b")
 
     expect(fetchStub.mock.calls[0][0]).toBe(
       "https://api.opensea.io/api/v2/traits/a%2Fb/floors",
@@ -233,7 +208,10 @@ describe("API", () => {
       }
     })
 
-    await Promise.all([logPromise, api.getPaymentToken(offerPaymentToken)])
+    await Promise.all([
+      logPromise,
+      api.accounts.getPaymentToken(offerPaymentToken),
+    ])
   })
 
   test("API handles errors", async () => {
@@ -245,16 +223,14 @@ describe("API", () => {
       }),
     )
 
-    await expect(api.getNFT(BAYC_CONTRACT_ADDRESS, "404040")).rejects.toThrow(
-      "not found",
-    )
+    await expect(
+      api.nfts.getNFT(BAYC_CONTRACT_ADDRESS, "404040"),
+    ).rejects.toThrow("not found")
   })
 
   test("API handles rate limit errors with retry-after", async () => {
     // Mock the _fetch method directly to simulate rate limit response followed by success
-    const rateLimitError = new Error(
-      "429 Too Many Requests",
-    ) as OpenSeaRateLimitError
+    const rateLimitError = new Error("429 Too Many Requests") as OpenSeaApiError
     rateLimitError.statusCode = 429
     rateLimitError.retryAfter = 1 // 1 second retry delay
     rateLimitError.responseBody = { error: "Rate limited" }
@@ -275,7 +251,7 @@ describe("API", () => {
       .mockResolvedValueOnce(successResponse)
 
     // Start the operation (will hit rate limit and start waiting)
-    const promise = api.getPaymentToken(
+    const promise = api.accounts.getPaymentToken(
       "0x0000000000000000000000000000000000000000",
     )
 
@@ -296,7 +272,7 @@ describe("API", () => {
     const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
       statusCode: 429,
       retryAfter: 30,
-    }) as OpenSeaRateLimitError
+    }) as OpenSeaApiError
     const localApi = new OpenSeaAPI({ apiKey: "key" })
     fetchStub = vi
       .spyOn(
@@ -471,7 +447,7 @@ describe("API", () => {
     // Mock the _fetch method to simulate 599 rate limit response followed by success
     const rateLimitError = new Error(
       "599 Network Connect Timeout Error",
-    ) as OpenSeaRateLimitError
+    ) as OpenSeaApiError
     rateLimitError.statusCode = 599
     rateLimitError.retryAfter = 1 // 1 second retry delay
     rateLimitError.responseBody = { message: "Custom rate limit" }
@@ -492,7 +468,7 @@ describe("API", () => {
       .mockResolvedValueOnce(successResponse)
 
     // Start the operation (will hit rate limit and start waiting)
-    const promise = api.getPaymentToken(
+    const promise = api.accounts.getPaymentToken(
       "0x0000000000000000000000000000000000000000",
     )
 
@@ -508,9 +484,7 @@ describe("API", () => {
 
   test("API handles invalid retry-after header gracefully", async () => {
     // Simulate an invalid retry-after header to test fallback parsing
-    const rateLimitError = new Error(
-      "429 Too Many Requests",
-    ) as OpenSeaRateLimitError
+    const rateLimitError = new Error("429 Too Many Requests") as OpenSeaApiError
     rateLimitError.statusCode = 429
     rateLimitError.retryAfter = undefined // Simulate invalid header parsing
     rateLimitError.responseBody = { error: "Rate limited" }
@@ -531,7 +505,7 @@ describe("API", () => {
       .mockResolvedValueOnce(successResponse)
 
     // Start the operation (will hit rate limit and use exponential backoff)
-    const promise = api.getPaymentToken(
+    const promise = api.accounts.getPaymentToken(
       "0x0000000000000000000000000000000000000000",
     )
 
@@ -809,7 +783,7 @@ describe("API", () => {
         .mockResolvedValue(new Response("{}", { status, statusText: "nope" }))
 
       await expect(
-        localApi().getCollection("boredapeyachtclub"),
+        localApi().collections.getCollection("boredapeyachtclub"),
       ).rejects.toMatchObject({ statusCode: status })
     })
 
@@ -823,7 +797,7 @@ describe("API", () => {
       )
 
       const error = await localApi()
-        .getCollection("nope")
+        .collections.getCollection("nope")
         .catch((e: unknown) => e)
 
       expect(error).toBeInstanceOf(Error)

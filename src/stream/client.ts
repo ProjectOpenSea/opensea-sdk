@@ -12,7 +12,6 @@ import {
   type ItemListedEvent,
   type ItemMetadataUpdate,
   type ItemReceivedBidEvent,
-  type ItemReceivedOfferEvent,
   type ItemSoldEvent,
   type ItemTransferredEvent,
   LogLevel,
@@ -46,15 +45,13 @@ export class OpenSeaStreamClient {
   constructor({
     network = Network.MAINNET,
     apiKey,
-    token,
     apiUrl,
     connectOptions,
     logLevel = LogLevel.INFO,
     onError,
     onEvent = () => true,
   }: ClientConfig) {
-    const key = apiKey ?? token
-    if (!key) {
+    if (!apiKey) {
       throw new Error(
         "An OpenSea API key is required. Pass it as `apiKey` when constructing OpenSeaStreamClient.",
       )
@@ -68,7 +65,7 @@ export class OpenSeaStreamClient {
 
     this.transport = new PhoenixChannelsTransport({
       endpoint,
-      params: { token: key, ...params },
+      params: { token: apiKey, ...params },
       ...transportOptions,
       logger: message => this.debug(message),
     })
@@ -197,27 +194,6 @@ export class OpenSeaStreamClient {
     callback: Callback<ItemTransferredEvent>,
   ) => {
     return this.on(EventType.ITEM_TRANSFERRED, collectionSlug, callback)
-  }
-
-  /**
-   * No-op. The Stream API does not emit `item_received_offer` and never has, so
-   * this only ever registered a handler that could not fire. Item-level offers
-   * arrive as `item_received_bid`, so use {@link onItemReceivedBid} instead.
-   *
-   * Kept callable, and kept from opening a connection for a topic that yields
-   * nothing, so existing call sites keep compiling and running unchanged.
-   *
-   * @deprecated Use {@link onItemReceivedBid}. This does nothing.
-   * @hidden
-   */
-  public onItemReceivedOffer = (
-    _collectionSlug: string,
-    _callback: Callback<ItemReceivedOfferEvent>,
-  ) => {
-    this.warn(
-      "onItemReceivedOffer does nothing: the Stream API does not emit item_received_offer. Item-level offers arrive as item_received_bid, via onItemReceivedBid.",
-    )
-    return () => {}
   }
 
   public onItemReceivedBid = (

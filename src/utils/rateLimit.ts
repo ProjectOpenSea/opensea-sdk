@@ -1,5 +1,4 @@
-import type { OpenSeaRateLimitError } from "../types"
-import { pluralize } from "./stringHelper"
+import type { OpenSeaApiError } from "../types"
 
 /**
  * Default configuration for rate limit handling
@@ -88,7 +87,7 @@ export async function executeWithRateLimit<T>(
       return await operation()
     } catch (error) {
       lastError = error as Error
-      const rateLimitError = error as OpenSeaRateLimitError
+      const rateLimitError = error as OpenSeaApiError
 
       // Rate limit error if the status code matches (preferred) or a retry-after header is present
       const isRateLimitError =
@@ -124,49 +123,4 @@ export async function executeWithRateLimit<T>(
 
   // Should never reach here, but TypeScript needs this
   throw lastError
-}
-
-/**
- * Execute an array of async operations sequentially with rate limit handling.
- * Logs progress after each operation.
- *
- * @param operations Array of async operations to execute
- * @param options Configuration for rate limit handling and progress logging
- * @returns Array of results from each operation
- */
-export async function executeSequentialWithRateLimit<T>(
-  operations: Array<() => Promise<T>>,
-  options: RateLimitOptions & {
-    operationName?: string
-  } = {},
-): Promise<T[]> {
-  const {
-    logger = () => {},
-    operationName = "operation",
-    ...rateLimitOptions
-  } = options
-
-  const results: T[] = []
-  const total = operations.length
-
-  logger(`Starting ${total} ${pluralize(total, operationName)}...`)
-
-  for (let i = 0; i < operations.length; i++) {
-    const operation = operations[i]
-    logger(`Executing ${operationName} ${i + 1}/${total}...`)
-
-    const result = await executeWithRateLimit(operation, {
-      ...rateLimitOptions,
-      logger,
-    })
-
-    results.push(result)
-    logger(`Completed ${operationName} ${i + 1}/${total}`)
-  }
-
-  logger(
-    `All ${total} ${pluralize(total, operationName)} completed successfully`,
-  )
-
-  return results
 }

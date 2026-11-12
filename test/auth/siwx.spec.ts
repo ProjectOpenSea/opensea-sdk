@@ -128,7 +128,6 @@ describe("SIWX wallet-link helpers", () => {
       chainArch: "EVM",
       chainId: 1,
       apiBaseUrl: "https://api.opensea.io",
-      statement: "Click to sign in",
     })
 
     expect(result.linkedWalletAddress).toBe(address)

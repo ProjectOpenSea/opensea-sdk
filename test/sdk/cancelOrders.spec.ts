@@ -125,7 +125,7 @@ describe("SDK: cancelOrders", () => {
 
   test("Should attempt to fetch orders from API when using orderHashes", async () => {
     const getOrder = vi
-      .spyOn(sdk.api, "getOrderByHash")
+      .spyOn(sdk.api.orders, "getOrderByHash")
       .mockRejectedValueOnce(new Error("Not found"))
 
     await expect(
@@ -402,7 +402,7 @@ describe("SDK: cancelOrders", () => {
     const cancellationManager = new CancellationManager(
       createMockContext({
         api: {
-          getOrderByHash,
+          orders: { getOrderByHash },
         },
         requireAccountIsAvailable,
       }),
@@ -541,7 +541,10 @@ describe("SDK: cancelOrder (singular)", () => {
     }
     const getOrderByHash = vi.fn().mockResolvedValue(buildMockOrderV2())
     const cancellationManager = new CancellationManager(
-      createMockContext({ seaport: mockSeaport, api: { getOrderByHash } }),
+      createMockContext({
+        seaport: mockSeaport,
+        api: { orders: { getOrderByHash } },
+      }),
     )
 
     const transactionHash = await cancellationManager.cancelOrder({
@@ -574,7 +577,7 @@ describe("SDK: offchainCancelOrder", () => {
     )
     const offchainCancelOrder = vi.fn().mockRejectedValue(refusal)
     const manager = new CancellationManager(
-      createMockContext({ api: { offchainCancelOrder } }),
+      createMockContext({ api: { orders: { offchainCancelOrder } } }),
     )
 
     const thrown = await manager
@@ -599,7 +602,7 @@ describe("SDK: offchainCancelOrder", () => {
     const other = apiError("Server Error: Order not found", 404)
     const offchainCancelOrder = vi.fn().mockRejectedValue(other)
     const manager = new CancellationManager(
-      createMockContext({ api: { offchainCancelOrder } }),
+      createMockContext({ api: { orders: { offchainCancelOrder } } }),
     )
 
     await expect(
@@ -612,7 +615,7 @@ describe("SDK: offchainCancelOrder", () => {
       .fn()
       .mockRejectedValue("Orders created recently must be cancelled onchain")
     const manager = new CancellationManager(
-      createMockContext({ api: { offchainCancelOrder } }),
+      createMockContext({ api: { orders: { offchainCancelOrder } } }),
     )
 
     await expect(
@@ -624,7 +627,7 @@ describe("SDK: offchainCancelOrder", () => {
     const response = { lastSignatureIssuedValidUntil: null }
     const offchainCancelOrder = vi.fn().mockResolvedValue(response)
     const manager = new CancellationManager(
-      createMockContext({ api: { offchainCancelOrder } }),
+      createMockContext({ api: { orders: { offchainCancelOrder } } }),
     )
 
     await expect(

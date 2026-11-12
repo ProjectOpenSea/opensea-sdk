@@ -244,7 +244,7 @@ describe("response casing contract", () => {
     expectTypeOf<
       Camelize<GetTraitsResponse>
     >().toEqualTypeOf<GetTraitsResponse>()
-    expect(typeof OpenSeaAPI.prototype.getTraits).toBe("function")
+    expect(typeof new OpenSeaAPI({}).collections.getTraits).toBe("function")
   })
 
   test("a wire-typed field is absent at runtime once the response is camelized", () => {

@@ -141,11 +141,11 @@ describe("SDK: order posting", () => {
     const expirationTime = getRandomExpiration()
 
     // Get the NFT to retrieve its collection
-    const { nft } = await sdk.api.getNFT(
+    const { nft } = await sdk.api.nfts.getNFT(
       CREATE_LISTING_CONTRACT_ADDRESS,
       CREATE_LISTING_TOKEN_ID,
     )
-    const collection = await sdk.api.getCollection(nft.collection)
+    const collection = await sdk.api.collections.getCollection(nft.collection)
 
     const listing = {
       accountAddress: walletAddress,
@@ -176,7 +176,7 @@ describe("SDK: order posting", () => {
   test("Post Collection Offer - Mainnet", async () => {
     const chain = Chain.Mainnet
     const sdk = getSdkForChain(chain)
-    const collection = await sdk.api.getCollection("cool-cats-nft")
+    const collection = await sdk.api.collections.getCollection("cool-cats-nft")
     const expirationTime = getRandomExpiration()
     const postOrderRequest = {
       collectionSlug: collection.collection,
@@ -212,7 +212,8 @@ describe("SDK: order posting", () => {
   test("Post Collection Offer - Polygon", async () => {
     const chain = Chain.Polygon
     const sdk = getSdkForChain(chain)
-    const collection = await sdk.api.getCollection("arttoken-1155-4")
+    const collection =
+      await sdk.api.collections.getCollection("arttoken-1155-4")
     const expirationTime = getRandomExpiration()
     const postOrderRequest = {
       collectionSlug: collection.collection,
@@ -248,7 +249,7 @@ describe("SDK: order posting", () => {
   test("Post Trait Offer - Ethereum", async () => {
     const chain = Chain.Mainnet
     const sdk = getSdkForChain(chain)
-    const collection = await sdk.api.getCollection("cool-cats-nft")
+    const collection = await sdk.api.collections.getCollection("cool-cats-nft")
     const expirationTime = getRandomExpiration()
     const postOrderRequest = {
       collectionSlug: collection.collection,

@@ -35,10 +35,8 @@ export type StreamConnectOptions = {
 /**
  * OpenSea Stream API configuration object.
  *
- * @param apiKey OpenSea API key. Preferred over `token`, and named to match
- *   `OpenSeaAPIConfig.apiKey` used elsewhere in the SDK.
- * @param token Deprecated alias for `apiKey`, kept so code migrating from
- *   `@opensea/stream-js` keeps working unchanged.
+ * @param apiKey OpenSea API key, named to match `OpenSeaAPIConfig.apiKey`
+ *   used elsewhere in the SDK.
  * @param network `Network` to use. Defaults to `Network.MAINNET`.
  * @param apiUrl Optional base URL override for the socket.
  * @param connectOptions connection tuning, see `StreamConnectOptions`.
@@ -51,10 +49,8 @@ export type StreamConnectOptions = {
 export type ClientConfig = {
   network?: Network
   apiUrl?: string
-  /** OpenSea API key. Provide either this or `token`. */
+  /** OpenSea API key. */
   apiKey?: string
-  /** @deprecated Use `apiKey` instead. */
-  token?: string
   connectOptions?: StreamConnectOptions
   onError?: (error: unknown) => void
   logLevel?: LogLevel
@@ -70,14 +66,6 @@ export enum EventType {
   ITEM_LISTED = "item_listed",
   ITEM_SOLD = "item_sold",
   ITEM_TRANSFERRED = "item_transferred",
-  /**
-   * Never emitted by the Stream API. Item-level offers arrive as
-   * {@link EventType.ITEM_RECEIVED_BID}. Kept so existing references compile.
-   *
-   * @deprecated Use {@link EventType.ITEM_RECEIVED_BID}.
-   * @hidden
-   */
-  ITEM_RECEIVED_OFFER = "item_received_offer",
   ITEM_RECEIVED_BID = "item_received_bid",
   ITEM_CANCELLED = "item_cancelled",
   COLLECTION_OFFER = "collection_offer",
@@ -217,20 +205,6 @@ export interface ItemReceivedBidEventPayload
 
 export type ItemReceivedBidEvent =
   BaseStreamMessage<ItemReceivedBidEventPayload>
-
-/**
- * @deprecated Never emitted. Use {@link ItemReceivedBidEventPayload}.
- * @hidden
- */
-export interface ItemReceivedOfferEventPayload
-  extends ItemReceivedBidEventPayload {}
-
-/**
- * @deprecated Never emitted. Use {@link ItemReceivedBidEvent}.
- * @hidden
- */
-export type ItemReceivedOfferEvent =
-  BaseStreamMessage<ItemReceivedOfferEventPayload>
 
 export interface ItemCancelledEventPayload extends BasePricedOrderEventPayload {
   listing_type: string

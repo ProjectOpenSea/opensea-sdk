@@ -32,12 +32,20 @@ describe("SDK: fulfill best listing", () => {
     const contractAddress = BUY_LISTING_CONTRACT_ADDRESS as string
     const tokenId = BUY_LISTING_TOKEN_ID as string
 
-    const { nft } = await sdkClient.api.getNFT(contractAddress, tokenId, chain)
+    const { nft } = await sdkClient.api.nfts.getNFT(
+      contractAddress,
+      tokenId,
+      chain,
+    )
     expect(nft).toBeDefined()
     expect(typeof nft.collection).toBe("string")
     const slug = nft.collection
 
-    const listing = await sdkClient.api.getBestListing(slug, tokenId, true)
+    const listing = await sdkClient.api.listings.getBestListing(
+      slug,
+      tokenId,
+      true,
+    )
     expect(listing).toBeDefined()
     expect(listing.chain).toBe(chain)
     expect(typeof listing.orderHash).toBe("string")

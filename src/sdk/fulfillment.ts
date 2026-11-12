@@ -178,17 +178,18 @@ export class FulfillmentManager {
     const unitsToFillStr =
       unitsToFill !== undefined ? unitsToFill.toString() : "1"
 
-    const fulfillmentData = await this.context.api.generateFulfillmentData(
-      accountAddress,
-      orderHash,
-      protocolAddress,
-      side,
-      assetContractAddress,
-      tokenId,
-      unitsToFillStr,
-      recipientAddress,
-      includeOptionalCreatorFees,
-    )
+    const fulfillmentData =
+      await this.context.api.orders.generateFulfillmentData(
+        accountAddress,
+        orderHash,
+        protocolAddress,
+        side,
+        assetContractAddress,
+        tokenId,
+        unitsToFillStr,
+        recipientAddress,
+        includeOptionalCreatorFees,
+      )
 
     // Use the transaction data returned by the API
     const transaction = fulfillmentData.fulfillmentData.transaction

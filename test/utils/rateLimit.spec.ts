@@ -1,7 +1,6 @@
 import { describe, expect, test, vi } from "vitest"
-import type { OpenSeaRateLimitError } from "../../src/types"
+import type { OpenSeaApiError } from "../../src/types"
 import {
-  executeSequentialWithRateLimit,
   executeWithRateLimit,
   type RateLimitOptions,
 } from "../../src/utils/rateLimit"
@@ -27,7 +26,7 @@ describe("Utils: rateLimit", () => {
     })
 
     test("retries on rate limit error with retry-after header", async () => {
-      const rateLimitError: OpenSeaRateLimitError = Object.assign(
+      const rateLimitError: OpenSeaApiError = Object.assign(
         new Error("429 Too Many Requests"),
         {
           statusCode: 429,
@@ -59,7 +58,7 @@ describe("Utils: rateLimit", () => {
     test("retries on rate limit error with exponential backoff", async () => {
       const rateLimitError = new Error(
         "429 Too Many Requests",
-      ) as OpenSeaRateLimitError
+      ) as OpenSeaApiError
       rateLimitError.statusCode = 429
 
       const operation = vi
@@ -89,7 +88,7 @@ describe("Utils: rateLimit", () => {
     test("respects maxRetries and throws after exhausting retries", async () => {
       const rateLimitError = new Error(
         "429 Too Many Requests",
-      ) as OpenSeaRateLimitError
+      ) as OpenSeaApiError
       rateLimitError.statusCode = 429
 
       const operation = vi.fn().mockRejectedValue(rateLimitError)
@@ -139,9 +138,7 @@ describe("Utils: rateLimit", () => {
     })
 
     test("handles 599 custom rate limit code", async () => {
-      const rateLimitError = new Error(
-        "599 Rate Limit",
-      ) as OpenSeaRateLimitError
+      const rateLimitError = new Error("599 Rate Limit") as OpenSeaApiError
       rateLimitError.statusCode = 599
 
       const operation = vi
@@ -165,7 +162,7 @@ describe("Utils: rateLimit", () => {
       const rateLimitError = Object.assign(new Error("429 Too Many Requests"), {
         statusCode: 429,
         retryAfter: 30,
-      }) as OpenSeaRateLimitError
+      }) as OpenSeaApiError
       const operation = vi
         .fn()
         .mockRejectedValueOnce(rateLimitError)
@@ -195,142 +192,6 @@ describe("Utils: rateLimit", () => {
       expect((rejection as Error).message).toBe("Request aborted")
       expect(operation).toHaveBeenCalledTimes(1)
       await observed
-    })
-  })
-
-  describe("executeSequentialWithRateLimit", () => {
-    test.each([
-      null,
-      undefined,
-    ])("stops at a %s rejection and rethrows it", async reason => {
-      const first = vi.fn().mockResolvedValue("first")
-      const failing = vi.fn().mockRejectedValue(reason)
-      const next = vi.fn().mockResolvedValue("next")
-
-      await expect(
-        executeSequentialWithRateLimit([first, failing, next]),
-      ).rejects.toBe(reason)
-
-      expect(first).toHaveBeenCalledTimes(1)
-      expect(failing).toHaveBeenCalledTimes(1)
-      expect(next).not.toHaveBeenCalled()
-      expect(vi.getTimerCount()).toBe(0)
-    })
-
-    test("executes operations sequentially", async () => {
-      const operations = [
-        vi.fn().mockResolvedValue("result1"),
-        vi.fn().mockResolvedValue("result2"),
-        vi.fn().mockResolvedValue("result3"),
-      ]
-
-      const logger = vi.fn()
-
-      const results = await executeSequentialWithRateLimit(operations, {
-        logger,
-        operationName: "test operation",
-      })
-
-      expect(results).toEqual(["result1", "result2", "result3"])
-      expect(operations[0]).toHaveBeenCalledTimes(1)
-      expect(operations[1]).toHaveBeenCalledTimes(1)
-      expect(operations[2]).toHaveBeenCalledTimes(1)
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/Starting 3 test operations/),
-      )
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/Executing test operation 1\/3/),
-      )
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/All 3 test operations completed/),
-      )
-    })
-
-    test("logs progress correctly for single operation", async () => {
-      const operations = [vi.fn().mockResolvedValue("result")]
-
-      const logger = vi.fn()
-
-      await executeSequentialWithRateLimit(operations, {
-        logger,
-        operationName: "test",
-      })
-
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/Starting 1 test\.\.\./),
-      )
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/All 1 test completed/),
-      )
-    })
-
-    test("handles rate limit errors in sequential operations", async () => {
-      const rateLimitError = new Error(
-        "429 Too Many Requests",
-      ) as OpenSeaRateLimitError
-      rateLimitError.statusCode = 429
-
-      const operations = [
-        vi.fn().mockResolvedValue("result1"),
-        vi
-          .fn()
-          .mockRejectedValueOnce(rateLimitError)
-          .mockResolvedValueOnce("result2"),
-        vi.fn().mockResolvedValue("result3"),
-      ]
-
-      const logger = vi.fn()
-
-      const promise = executeSequentialWithRateLimit(operations, {
-        logger,
-        operationName: "listing submission",
-        baseRetryDelay: 500,
-      })
-
-      // Wait for first operation
-      await vi.advanceTimersByTimeAsync(0)
-
-      // Wait for rate limit retry on second operation
-      await vi.advanceTimersByTimeAsync(500)
-
-      const results = await promise
-
-      expect(results).toEqual(["result1", "result2", "result3"])
-      expect(logger).toHaveBeenCalledWith(
-        expect.stringMatching(/Rate limit hit/),
-      )
-    })
-
-    test("stops execution if operation fails after retries", async () => {
-      const rateLimitError = new Error(
-        "429 Too Many Requests",
-      ) as OpenSeaRateLimitError
-      rateLimitError.statusCode = 429
-
-      const operations = [
-        vi.fn().mockResolvedValue("result1"),
-        vi.fn().mockRejectedValue(rateLimitError),
-        vi.fn().mockResolvedValue("result3"),
-      ]
-
-      const logger = vi.fn()
-
-      const resultPromise = executeSequentialWithRateLimit(operations, {
-        logger,
-        maxRetries: 1,
-        baseRetryDelay: 100,
-      })
-
-      // Attach a rejection handler immediately to prevent unhandled rejection
-      const caughtPromise = resultPromise.catch((error: Error) => error)
-
-      // Wait for first operation and retries
-      await vi.runAllTimersAsync()
-
-      const error = await caughtPromise
-      expect((error as Error).message).toContain("429")
-      // Third operation should not be called
-      expect(operations[2]).not.toHaveBeenCalled()
     })
   })
 })
