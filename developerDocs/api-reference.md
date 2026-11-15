@@ -517,9 +517,19 @@ const { transactions } =
 // Send each transaction in order from its `from`, the contract owner.
 
 await openseaSDK.api.walletAuth.refreshCollectionMetadata("my-collection");
+
+const { settings } =
+  await openseaSDK.api.walletAuth.getCollectionRaritySettings("my-collection");
+await openseaSDK.api.walletAuth.setCollectionRaritySetting("my-collection", {
+  traitType: "Background",
+  mode: "exclude",
+});
+await openseaSDK.api.walletAuth.revertCollectionRaritySetting("my-collection", {
+  traitCount: true,
+});
 ```
 
-`getCollectionMetadata` returns the saved hero, about and overview content in the shape `updateCollectionMetadata` accepts. `createCollectionPageMediaUpload` takes a placement (`hero_desktop`, `hero_mobile`, `about_preview`, `about_section`, `overview`, `overview_background` or `team`) and the file's exact MIME type, and returns its `UploadContext` without camelizing `fields`, so the signed field names reach storage unchanged. `setCollectionPricingCurrency` returns a null `workflowId` when the collection is already priced that way, and `buildCreatorFeeEnforcementTransactions` returns an empty list when the contract is already in the requested state.
+`getCollectionMetadata` returns the saved hero, about and overview content in the shape `updateCollectionMetadata` accepts. `createCollectionPageMediaUpload` takes a placement (`hero_desktop`, `hero_mobile`, `about_preview`, `about_section`, `overview`, `overview_background` or `team`) and the file's exact MIME type, and returns its `UploadContext` without camelizing `fields`, so the signed field names reach storage unchanged. `setCollectionPricingCurrency` returns a null `workflowId` when the collection is already priced that way, and `buildCreatorFeeEnforcementTransactions` returns an empty list when the contract is already in the requested state. The rarity settings helpers target one trait (`traitType`) or the number of traits (`traitCount: true`), take a `mode` of `frequency`, `exclude` or `higher_is_rarer`, and return the settings in effect, each with a `source` of `contract_metadata` or `site`. Rankings recompute shortly after a change.
 
 ---
 

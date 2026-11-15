@@ -171,6 +171,16 @@ describe("WalletAuthAPI", () => {
       ],
       [
         "POST",
+        "/api/v2/collections/my%20collection/rarity_settings",
+        () => api.setCollectionRaritySetting("my collection", body),
+      ],
+      [
+        "POST",
+        "/api/v2/collections/my%20collection/rarity_settings/revert",
+        () => api.revertCollectionRaritySetting("my collection", body),
+      ],
+      [
+        "POST",
         "/api/v2/collections/my%20collection/refresh",
         () => api.refreshCollectionMetadata("my collection"),
       ],
@@ -290,6 +300,11 @@ describe("WalletAuthAPI", () => {
   it("routes scoped reads with query support", async () => {
     await api.getDropEligibility("drop")
     expect(get).toHaveBeenLastCalledWith("/api/v2/drops/drop/eligibility")
+
+    await api.getCollectionRaritySettings("my collection")
+    expect(get).toHaveBeenLastCalledWith(
+      "/api/v2/collections/my%20collection/rarity_settings",
+    )
 
     await api.getFavorites("0xabc", { limit: 1 })
     expect(get).toHaveBeenLastCalledWith("/api/v2/account/0xabc/favorites", {
@@ -551,6 +566,69 @@ describe("collection management writes", () => {
     expect(pricing).toEqual({ success: true, workflowId: "reprice-1" })
     expect(enforcement.transactions[0].from).toBe("0xowner")
     expect(refresh).toEqual({ success: true })
+  })
+})
+
+describe("collection rarity settings", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("sends snake_case targets and camelizes the settings", async () => {
+    const settings = {
+      settings: [
+        {
+          trait_type: null,
+          trait_count: true,
+          mode: "exclude",
+          source: "site",
+          hidden_from_filters: false,
+          contract_mode: null,
+        },
+      ],
+    }
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(settings), { status: 200 }),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    const api = new OpenSeaAPI({ apiKey: "key", authToken: "jwt" })
+
+    const set = await api.walletAuth.setCollectionRaritySetting("cats", {
+      traitCount: true,
+      mode: "exclude",
+    })
+    await api.walletAuth.revertCollectionRaritySetting("cats", {
+      traitType: "Background",
+    })
+
+    const sent = fetchMock.mock.calls.map(call => {
+      const [url, init] = call as unknown as [string, RequestInit]
+      return {
+        path: new URL(url).pathname,
+        method: init.method,
+        body: JSON.parse(String(init.body)),
+      }
+    })
+    expect(sent).toEqual([
+      {
+        path: "/api/v2/collections/cats/rarity_settings",
+        method: "POST",
+        body: { trait_count: true, mode: "exclude" },
+      },
+      {
+        path: "/api/v2/collections/cats/rarity_settings/revert",
+        method: "POST",
+        body: { trait_type: "Background" },
+      },
+    ])
+    expect(set.settings[0]).toEqual({
+      traitType: null,
+      traitCount: true,
+      mode: "exclude",
+      source: "site",
+      hiddenFromFilters: false,
+      contractMode: null,
+    })
   })
 })
 

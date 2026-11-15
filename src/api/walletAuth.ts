@@ -484,6 +484,46 @@ export class WalletAuthAPI {
     )
   }
 
+  /**
+   * The effective rarity setting for the trait count and each trait with one,
+   * and whether it comes from the contract's metadata or was set on OpenSea.
+   */
+  getCollectionRaritySettings(slug: string) {
+    return this.fetcher.get<
+      OperationResponse<"get_collection_rarity_settings">
+    >(`/api/v2/collections/${segment(slug)}/rarity_settings`)
+  }
+
+  /**
+   * Set how one trait (`traitType`) or the trait count (`traitCount: true`)
+   * counts toward rarity. Rankings recompute shortly after.
+   */
+  setCollectionRaritySetting(
+    slug: string,
+    body: WalletAuthRequest<"set_collection_rarity_setting">,
+  ) {
+    return this.fetcher.request<
+      OperationResponse<"set_collection_rarity_setting">
+    >("POST", `/api/v2/collections/${segment(slug)}/rarity_settings`, body)
+  }
+
+  /**
+   * Remove OpenSea's setting for one trait or the trait count, so the
+   * contract metadata's setting (or default scoring) applies again.
+   */
+  revertCollectionRaritySetting(
+    slug: string,
+    body: WalletAuthRequest<"revert_collection_rarity_setting">,
+  ) {
+    return this.fetcher.request<
+      OperationResponse<"revert_collection_rarity_setting">
+    >(
+      "POST",
+      `/api/v2/collections/${segment(slug)}/rarity_settings/revert`,
+      body,
+    )
+  }
+
   refreshCollectionMetadata(slug: string) {
     return this.fetcher.request<
       OperationResponse<"refresh_collection_metadata">

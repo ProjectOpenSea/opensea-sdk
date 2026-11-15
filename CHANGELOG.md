@@ -1,5 +1,23 @@
 # @opensea/sdk
 
+## 14.1.0
+
+### Minor Changes
+
+- 7e26522: Add creator rarity settings. `api.walletAuth` gains `getCollectionRaritySettings`, `setCollectionRaritySetting` and `revertCollectionRaritySetting`. The CLI adds `opensea collections rarity-settings`, `set-rarity-setting` and `revert-rarity-setting`, and `OpenSeaCLI.collections` gains `raritySettings`, `setRaritySetting` and `revertRaritySetting`. All three need a wallet token with `write:collections`.
+
+### Patch Changes
+
+- f563cba: ERC-1155 drop mints and this week's drop fields.
+
+  CLI: `opensea drops mint` and `opensea drops cross-chain-mint` take `--token-id <id>`, required for an ERC-1155 drop and omitted for an ERC-721 drop. It must be a non-negative decimal integer and is sent unchanged, so IDs above 2^53 keep every digit. The programmatic `DropsAPI.mint` takes `tokenId`. `drops get` now returns each stage's `max_token_supply_for_stage`, and `drops eligibility` returns `mints_remaining` per stage. API errors that carry a `code` print it in the error output, and `STAGE_FEE_BELOW_FLOOR` adds a hint that only the drop's creator can fix it.
+
+  SDK: `buildMintTransaction` and `buildCrossChainMintTransactions` document `tokenId`; the camelized drop types gain `tokenId`, `maxTokenSupplyForStage` and `mintsRemaining` from `@opensea/api-types`.
+
+- Updated dependencies [f563cba]
+- Updated dependencies [ec54092]
+  - @opensea/api-types@0.20.0
+
 ## 14.0.1
 
 ### Patch Changes

@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, test, type vi } from "vitest"
+import { beforeEach, describe, expect, test, vi } from "vitest"
+import { OpenSeaAPI } from "../../src/api/api"
 import { DropsAPI } from "../../src/api/drops"
-import type { CrossChainDropMintResponse } from "../../src/api/types"
+import type {
+  CrossChainDropMintResponse,
+  DropMintResponse,
+} from "../../src/api/types"
 import { createMockFetcher } from "../fixtures/fetcher"
 
 describe("API: DropsAPI", () => {
@@ -70,5 +74,57 @@ describe("API: DropsAPI", () => {
       },
     )
     expect(result).toBe(response)
+  })
+
+  test("builds an ERC-1155 mint for the named token", async () => {
+    const response = {
+      to: "0xseadrop",
+      data: "0x1234",
+      value: "0",
+      chain: "base",
+    } as DropMintResponse
+    mockPost.mockResolvedValue(response)
+
+    const result = await dropsAPI.buildMintTransaction("cool-1155", {
+      minter: "0xminter",
+      quantity: 1,
+      tokenId: "0",
+    })
+
+    expect(mockPost).toHaveBeenCalledWith("/api/v2/drops/cool-1155/mint", {
+      minter: "0xminter",
+      quantity: 1,
+      tokenId: "0",
+    })
+    expect(result).toBe(response)
+  })
+
+  test("puts tokenId on the wire as token_id", async () => {
+    const bodies: string[] = []
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        bodies.push(init.body as string)
+        return new Response(
+          JSON.stringify({ to: "0x1", data: "0x", value: "0", chain: "base" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        )
+      }),
+    )
+
+    try {
+      const live = new OpenSeaAPI({ apiKey: "key" })
+      await live.drops.buildMintTransaction("cool-1155", {
+        minter: "0xminter",
+        quantity: 1,
+        tokenId: "0",
+      })
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(bodies.map(body => JSON.parse(body))).toEqual([
+      { minter: "0xminter", quantity: 1, token_id: "0" },
+    ])
   })
 })

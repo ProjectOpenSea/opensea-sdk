@@ -47,7 +47,9 @@ export class DropsAPI {
   }
 
   /**
-   * Builds a mint transaction for a drop.
+   * Builds a mint transaction for a drop. An ERC-1155 drop mints one token per
+   * request, named by `tokenId`; an ERC-721 drop assigns token IDs onchain, so
+   * `tokenId` must be omitted.
    */
   async buildMintTransaction(
     slug: string,
@@ -64,6 +66,7 @@ export class DropsAPI {
    * Builds ordered transactions for paying on one chain and minting on
    * another. Submit each transaction in order, then poll the returned
    * `receiptRequest` with `getTransactionReceipt` until it is terminal.
+   * `tokenId` follows the same rule as {@link buildMintTransaction}.
    */
   async buildCrossChainMintTransactions(
     slug: string,
