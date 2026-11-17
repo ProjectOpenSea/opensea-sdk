@@ -1812,3 +1812,28 @@ export type GetSignalResponse = Camelize<SignalResponse>
  * @category API Response Types
  */
 export type ListSignalsResponse = Camelize<SignalsResponse>
+
+/** Indexed filters for collection NFTs. Numeric traits is a JSON array of traitType/min/max ranges. */
+export type CollectionNFTFilters = Camelize<
+  Pick<
+    OperationQueryParams<"get_nfts_by_collection">,
+    | "is_listed"
+    | "price_min"
+    | "price_max"
+    | "rarity_min"
+    | "rarity_max"
+    | "sort_by"
+    | "sort_direction"
+    | "numeric_traits"
+  >
+>
+/** Optional capped two-sided collection depth. */
+export type CollectionOfferAggregatesArgs = PaginatedAnalyticsArgs &
+  Camelize<
+    Pick<
+      OperationQueryParams<"get_collection_offer_aggregates">,
+      "include_depth"
+    >
+  >
+/** Public account expansion; private registered wallets remain excluded. */
+export type GetAccountArgs = OperationQueryParams<"get_account">

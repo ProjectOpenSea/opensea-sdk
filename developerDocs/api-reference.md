@@ -121,9 +121,11 @@ console.log(`Fetched ${nfts.length} NFTs`);
 | Parameter | Type   | Required | Description                                                                                                                                    |
 | --------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `slug`    | string | Yes      | Collection slug (identifier)                                                                                                                   |
-| `limit`   | number | No       | Number of NFTs to retrieve (1-50)                                                                                                              |
+| `limit`   | number | No       | Number of NFTs to retrieve (1-200; at most 100 with numeric trait ranges)                                                                                                              |
 | `next`    | string | No       | Pagination cursor from previous request                                                                                                        |
 | `traits`  | TraitFilter[] | No | Trait filters, e.g. `[{ traitType: "Background", value: "Red" }]`. Multiple entries are AND-combined. The SDK JSON-encodes the array for the request. |
+| `hasAgentBinding` | boolean | No | Filter by presence of an agent binding. |
+| `filters` | CollectionNFTFilters | No | Optional sixth argument: `isListed`, `priceMin`, `priceMax`, `rarityMin`, `rarityMax`, `sortBy`, `sortDirection`, and JSON-encoded `numericTraits`. Prices use payment-token units without conversion; numeric ranges require complete indexed trait data. |
 
 **Returns:** `ListNFTsResponse` containing:
 

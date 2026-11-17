@@ -20,6 +20,7 @@ import type { Fetcher } from "./fetcher"
 import type {
   AgentProfileRelationshipsResponse,
   ClosedPositionsResponse,
+  GetAccountArgs,
   GetAccountTokensArgs,
   GetAccountTokensResponse,
   PortfolioArgs,
@@ -67,9 +68,13 @@ export class AccountsAPI {
   /**
    * Fetch account for an address.
    */
-  async getAccount(address: string): Promise<OpenSeaAccount> {
+  async getAccount(
+    address: string,
+    args?: GetAccountArgs,
+  ): Promise<OpenSeaAccount> {
     const response = await this.fetcher.get<OpenSeaAccount>(
       getAccountPath(address),
+      args,
     )
     // The api-types schema marks `social_media_accounts` as a required
     // non-nullable array, but the live API returns `null` for accounts that

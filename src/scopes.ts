@@ -16,6 +16,7 @@ export const OPENSEA_SCOPES = {
   READ_TOOLS: "read:tools",
   READ_WALLETS: "read:wallets",
   WRITE_FAVORITES: "write:favorites",
+  WRITE_POSTS: "write:posts",
   WRITE_SOCIAL: "write:social",
   WRITE_TOOLS: "write:tools",
   WRITE_ORDERS: "write:orders",

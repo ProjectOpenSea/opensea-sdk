@@ -18,6 +18,7 @@ import {
 import type { Fetcher } from "./fetcher"
 import {
   type BatchNftsRequest,
+  type CollectionNFTFilters,
   encodeTraitsParam,
   type GetCollectionResponse,
   type GetContractResponse,
@@ -56,10 +57,17 @@ export class NFTsAPI {
     next: string | undefined = undefined,
     traits: TraitFilter[] | undefined = undefined,
     hasAgentBinding: boolean | undefined = undefined,
+    filters?: CollectionNFTFilters,
   ): Promise<ListNFTsResponse> {
     const response = await this.fetcher.get<ListNFTsResponse>(
       getListNFTsByCollectionPath(slug),
-      { limit, next, traits: encodeTraitsParam(traits), hasAgentBinding },
+      {
+        ...filters,
+        limit,
+        next,
+        traits: encodeTraitsParam(traits),
+        hasAgentBinding,
+      },
     )
     return response
   }

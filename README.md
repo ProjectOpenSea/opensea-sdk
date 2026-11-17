@@ -106,6 +106,12 @@ Version 14 removed the older flat methods such as `sdk.api.getCollection(slug)`.
 the namespaced method of the same name, except four that were renamed; see the
 [API reference](developerDocs/api-reference.md#calling-the-api).
 
+### Optional discovery data
+
+Existing methods accept opt-in data without changing their defaults. `api.collections.getCollectionOfferAggregates(slug, { includeDepth: true })` adds capped two-sided depth. `api.accounts.getAccount(address, { include: ["wallets"] })` expands public registered wallets.
+
+`api.nfts.getNFTsByCollection` keeps its first five positional arguments and accepts listing, price, rarity, numeric-trait and ordering filters as a sixth argument. See [the collection NFT parameters](developerDocs/api-reference.md#get-nfts-by-collection). Keep filters and ordering unchanged across cursor pages.
+
 ## Response casing
 
 The API uses snake_case. The SDK converts response keys to camelCase, and converts camelCase

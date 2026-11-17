@@ -1,5 +1,23 @@
 # @opensea/sdk
 
+## 14.2.0
+
+### Minor Changes
+
+- a3973a8: Add optional filters and analytics to existing collection NFT, offer aggregate, and account methods and CLI commands. Preserve default requests and expose generated collection P&L types. The SDK collection NFT method retains its positional arguments and accepts new filters in a trailing options object.
+
+This release also synchronizes `write:posts` with the deployed scope catalog. OAuth requests that omit an explicit scope list include it.
+
+The generated response types now require `ProfileCollectionResponse.cost_basis_coverage`, `ProfileCollectionResponse.known_basis_quantity`, `SvmTransactionDetailsResponse.requires_jito_bundle`, and `SwapQuoteDetails.routes`. Update typed response fixtures that construct these objects. Existing request arguments remain compatible.
+
+## 14.1.1
+
+### Patch Changes
+
+- a93a5b8: Keep `OPENSEA_SCOPES` and default OAuth authorization requests synchronized with the deployed `write:posts` scope. Update generated response types; typed response fixtures may need the newly required collection basis coverage, known basis quantity, Solana bundle indicator, and swap route fields.
+- Updated dependencies [a93a5b8]
+  - @opensea/api-types@0.20.1
+
 ## 14.1.0
 
 ### Minor Changes

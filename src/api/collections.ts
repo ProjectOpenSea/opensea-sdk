@@ -22,6 +22,7 @@ import {
   type CollectionFloorPricesArgs,
   type CollectionHoldersArgs,
   type CollectionHoldersPaginatedResponse,
+  type CollectionOfferAggregatesArgs,
   type CollectionOfferAggregatesPaginatedResponse,
   CollectionOrderByOption,
   type CollectionPfpProfilesResponse,
@@ -36,7 +37,6 @@ import {
   type GetTopPfpCollectionsArgs,
   type GetTraitsResponse,
   type GetTrendingCollectionsArgs,
-  type PaginatedAnalyticsArgs,
   type TopPfpCollectionsResponse,
   type TraitFloorsResponse,
 } from "./types"
@@ -171,7 +171,7 @@ export class CollectionsAPI {
    */
   async getCollectionOfferAggregates(
     slug: string,
-    args?: PaginatedAnalyticsArgs,
+    args?: CollectionOfferAggregatesArgs,
   ): Promise<CollectionOfferAggregatesPaginatedResponse> {
     return this.fetcher.get<CollectionOfferAggregatesPaginatedResponse>(
       getCollectionOfferAggregatesPath(slug),
