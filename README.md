@@ -108,7 +108,9 @@ the namespaced method of the same name, except four that were renamed; see the
 
 ### Optional discovery data
 
-Existing methods accept opt-in data without changing their defaults. `api.collections.getCollectionOfferAggregates(slug, { includeDepth: true })` adds capped two-sided depth. `api.accounts.getAccount(address, { include: ["wallets"] })` expands public registered wallets.
+Existing methods accept opt-in data without changing their defaults. `api.collections.getCollectionStats(slug, { volumeTimeframe: "seven_days" })` adds volume history; `api.collections.getCollectionOfferAggregates(slug, { includeDepth: true })` adds capped two-sided depth. `api.nfts.getNFTsByGroup(group, { includeCatalog: true })` requests optional catalog identities. The response omits them before unrestricted public launch or when no identity is available; this option does not bypass lab gating. `api.accounts.getAccount(address, { include: ["wallets"] })` expands public registered wallets.
+
+Volume history is oldest first. Each bucket has a numeric Unix-seconds `time`, decimal-string `usd`, and `native` currency amount. Missing buckets are omitted, and the current bucket can be incomplete.
 
 `api.nfts.getNFTsByCollection` keeps its first five positional arguments and accepts listing, price, rarity, numeric-trait and ordering filters as a sixth argument. See [the collection NFT parameters](developerDocs/api-reference.md#get-nfts-by-collection). Keep filters and ordering unchanged across cursor pages.
 

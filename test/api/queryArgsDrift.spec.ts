@@ -94,6 +94,7 @@ const NFT_GROUP_FACET_FILTER_FIELDS = [
   "productType",
 ] as const
 const GET_NFTS_BY_GROUP_FIELDS = [
+  "includeCatalog",
   "collectionSlugs",
   "query",
   "isListed",

@@ -1,5 +1,11 @@
 # @opensea/sdk
 
+## 14.3.0
+
+### Minor Changes
+
+- a48a7ec: Expose opt-in collection volume history and standardized card catalog identities on existing SDK methods and CLI commands after the backend features deploy. Preserve default requests and public catalog launch gating.
+
 ## 14.2.0
 
 ### Minor Changes

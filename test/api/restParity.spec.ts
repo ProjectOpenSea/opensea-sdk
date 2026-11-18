@@ -55,21 +55,30 @@ describe("existing REST discovery options", () => {
     expect([...query(fetch, 1)]).toEqual([])
   })
 
-  test("depth and wallets remain opt-in", async () => {
+  test("history, depth, catalog and wallets remain opt-in", async () => {
     const fetch = respond({ social_media_accounts: [] })
     const api = new OpenSeaAPI({ apiKey: "test" })
+    await api.collections.getCollectionStats("cards", {
+      volumeTimeframe: "seven_days",
+    })
     await api.collections.getCollectionOfferAggregates("cards", {
       includeDepth: true,
     })
+    await api.nfts.getNFTsByGroup("trading_cards", { includeCatalog: true })
     await api.accounts.getAccount("MixedCaseWallet", { include: ["wallets"] })
-    expect(query(fetch, 0).get("include_depth")).toBe("true")
-    expect(query(fetch, 1).getAll("include")).toEqual(["wallets"])
-    expect(new URL(String(fetch.mock.calls[1][0])).pathname).toBe(
+    expect(query(fetch, 0).get("volume_timeframe")).toBe("seven_days")
+    expect(query(fetch, 1).get("include_depth")).toBe("true")
+    expect(query(fetch, 2).get("include_catalog")).toBe("true")
+    expect(query(fetch, 3).getAll("include")).toEqual(["wallets"])
+    expect(new URL(String(fetch.mock.calls[3][0])).pathname).toBe(
       "/api/v2/accounts/MixedCaseWallet",
     )
+    await api.collections.getCollectionStats("cards")
     await api.collections.getCollectionOfferAggregates("cards")
+    await api.nfts.getNFTsByGroup("trading_cards")
     await api.accounts.getAccount("MixedCaseWallet")
-    for (const index of [2, 3]) expect([...query(fetch, index)]).toEqual([])
+    for (const index of [4, 5, 6, 7])
+      expect([...query(fetch, index)]).toEqual([])
   })
 
   test("collection P&L stays decimal strings with unknown basis preserved", async () => {

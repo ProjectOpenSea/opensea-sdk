@@ -26,6 +26,7 @@ import {
   type CollectionOfferAggregatesPaginatedResponse,
   CollectionOrderByOption,
   type CollectionPfpProfilesResponse,
+  type CollectionStatsArgs,
   type CreatorFeeEnforcementStatusResponse,
   type FloorPriceHistoryResponse,
   type GetCollectionPfpProfilesArgs,
@@ -95,9 +96,12 @@ export class CollectionsAPI {
   /**
    * Fetch stats for an OpenSea collection.
    */
-  async getCollectionStats(slug: string): Promise<OpenSeaCollectionStats> {
+  async getCollectionStats(
+    slug: string,
+    args?: CollectionStatsArgs,
+  ): Promise<OpenSeaCollectionStats> {
     const path = getCollectionStatsPath(slug)
-    const response = await this.fetcher.get<OpenSeaCollectionStats>(path)
+    const response = await this.fetcher.get<OpenSeaCollectionStats>(path, args)
     return response as OpenSeaCollectionStats
   }
 

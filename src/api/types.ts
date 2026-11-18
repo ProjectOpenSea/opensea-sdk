@@ -1582,6 +1582,8 @@ export type NFTGroupSortBy =
  * @category API Query Args
  */
 export interface GetNFTsByGroupArgs extends NFTGroupFacetFilters {
+  /** Request optional catalog identities; omitted before unrestricted public launch. */
+  includeCatalog?: OperationQueryParams<"list_nfts_by_group">["include_catalog"]
   /** Restrict results to these collections in the group (max 10). Defaults to the whole group. */
   collectionSlugs?: string[]
   /** Full-text match on NFT name, up to 100 characters. */
@@ -1826,6 +1828,10 @@ export type CollectionNFTFilters = Camelize<
     | "sort_direction"
     | "numeric_traits"
   >
+>
+/** Optional volume buckets: numeric Unix seconds and decimal-string USD values. */
+export type CollectionStatsArgs = Camelize<
+  OperationQueryParams<"get_collection_stats">
 >
 /** Optional capped two-sided collection depth. */
 export type CollectionOfferAggregatesArgs = PaginatedAnalyticsArgs &
