@@ -879,24 +879,7 @@ export type TokenRankingSortBy = NonNullable<
  * Query args for Get Swap Quote endpoint.
  * @category API Query Args
  */
-export interface GetSwapQuoteArgs {
-  /** Chain of the token to swap from */
-  fromChain: string
-  /** Contract address of the token to swap from */
-  fromAddress: string
-  /** Chain of the token to swap to */
-  toChain: string
-  /** Contract address of the token to swap to */
-  toAddress: string
-  /** Amount to swap in the smallest unit of the token (e.g. wei for ETH) */
-  quantity: string
-  /** Wallet address executing the swap */
-  address: string
-  /** Slippage tolerance, 0.0 to 0.5 (default 0.01) */
-  slippage?: number
-  /** Recipient address (defaults to the sender address) */
-  recipient?: string
-}
+export type GetSwapQuoteArgs = Camelize<OperationQueryParams<"get_swap_quote">>
 
 /**
  * Response from OpenSea API for fetching a swap quote.

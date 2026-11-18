@@ -34,6 +34,71 @@ describe("API", () => {
     vi.restoreAllMocks()
   })
 
+  test("swap agent controls and raw metadata survive HTTP casing conversion", async () => {
+    vi.useRealTimers()
+    fetchStub = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          quote: {
+            routes: [
+              {
+                from_quantity: "1000",
+                to_quantity: "9007199254740993",
+                min_to_quantity: null,
+              },
+            ],
+          },
+          transactions: [
+            {
+              chain: "solana",
+              svm: {
+                serialized_transaction: "unsigned-base64",
+                blockhash: "blockhash",
+                last_valid_block_height: 123,
+                requires_jito_bundle: true,
+                marketplace_fee_transfer: {
+                  raw_amount: "9007199254740993",
+                  recipient: "recipient",
+                },
+              },
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    )
+    const localApi = new OpenSeaAPI({ apiKey: "key" })
+    const result = await localApi.tokens.getSwapQuote({
+      fromChain: "solana",
+      fromAddress: "native",
+      toChain: "solana",
+      toAddress: "mint",
+      quantity: "1000",
+      address: "wallet",
+      singleTransactionOnly: true,
+      transactionFormat: "serialized",
+    })
+    const url = new URL(fetchStub.mock.calls[0][0])
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({
+      single_transaction_only: "true",
+      transaction_format: "serialized",
+    })
+    expect(result.quote.routes[0]).toMatchObject({
+      toQuantity: "9007199254740993",
+      minToQuantity: null,
+    })
+    expect(result.transactions[0].svm).toMatchObject({
+      serializedTransaction: "unsigned-base64",
+      blockhash: "blockhash",
+      lastValidBlockHeight: 123,
+      requiresJitoBundle: true,
+      marketplaceFeeTransfer: {
+        rawAmount: "9007199254740993",
+        recipient: "recipient",
+      },
+    })
+  })
+
   test("API has correct base url", () => {
     expect(api.apiBaseUrl).toBe("https://api.opensea.io")
   })

@@ -114,6 +114,21 @@ Volume history is oldest first. Each bucket has a numeric Unix-seconds `time`, d
 
 `api.nfts.getNFTsByCollection` keeps its first five positional arguments and accepts listing, price, rarity, numeric-trait and ordering filters as a sixth argument. See [the collection NFT parameters](developerDocs/api-reference.md#get-nfts-by-collection). Keep filters and ordering unchanged across cursor pages.
 
+## Swap quotes for agents
+
+`api.tokens.getSwapQuote` accepts `singleTransactionOnly` and `transactionFormat`.
+`api.tokens.executeSwap` accepts both options and prepares transaction data for external signing
+and submission.
+
+The SDK returns camelCase response fields. `quote.routes` exposes `fromQuantity`, `toQuantity`,
+and nullable `minToQuantity` as raw token-unit strings. The provider reports the minimum when available.
+Verify the onchain floor independently. Solana transaction details can include unsigned
+`serializedTransaction`, `blockhash`, `lastValidBlockHeight`, `requiresJitoBundle`, and nullable
+`marketplaceFeeTransfer`. That field describes the reported OpenSea marketplace fee transfer.
+
+Use an external Solana signer for serialized output, preserve the message bytes, and request a
+new quote after its block-height expiry.
+
 ## Response casing
 
 The API uses snake_case. The SDK converts response keys to camelCase, and converts camelCase
